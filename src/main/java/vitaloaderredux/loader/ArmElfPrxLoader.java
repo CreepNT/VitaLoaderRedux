@@ -75,7 +75,7 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 	public static final String MODULE_INFO_LOCATOR_USRPROPNAME = "[VLR:ARM] SceModuleInfo locator";
 	public static final String IMPORTEXPORT_LOCATOR_USRPROPNAME = "[VLR:ARM] Imports/Exports locator";
 	
-	private static final String FILE_FORMAT_NAME = "ARM ELF-PRX for PlayStation®Vita";
+	private static final String FILE_FORMAT_NAME = "ARM ELF-PRX for PlayStation\u00AEVita";
 	
 	private static final String VARIMPORT_BLOCK_ADDRESS_OPTNAME = "Variable Imports Block Base";
 	private static final String VARIMPORT_BLOCK_SIZE_OPTNAME = "Variable Imports Block Size";
