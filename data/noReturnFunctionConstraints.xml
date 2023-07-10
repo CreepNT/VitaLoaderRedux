@@ -1,0 +1,5 @@
+<noReturnFunctionConstraints>
+  <executable_format name="ARM ELF-PRX for PlayStation®Vita">
+    <functionNamesFile>VitaFunctionsThatDoNotReturn.txt</functionNamesFile>
+  </executable_format>
+</noReturnFunctionConstraints>

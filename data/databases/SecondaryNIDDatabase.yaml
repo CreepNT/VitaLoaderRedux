@@ -1,0 +1,48 @@
+version: 3
+firmware: 3.60 #even though we have NIDs for 0.9xx-only functions :D
+modules:
+   #######################################################################
+   #                    SECURE STATE (TZS) MODULES                       #
+   #                                                                     #
+   #   Note that the _TZS suffix is not present in module name, but is   #
+   #    required here to avoid a clash with the Non-Secure module        #
+   #######################################################################
+
+   #####################################################################
+   #                    NON-SECURE STATE MODULES                       #
+   #####################################################################
+   NSKBL:
+      libraries:
+         SceKblForKernel:
+            nid: 0xD0FC2991
+            functions:
+               sceKernelPrintf: 0x13A5ABEF
+               sceKernelSysrootProcessmgrStart2: 0x161D6FCC
+               sceKernelSysrootThreadMgrStartAfterProcess: 0x1DB28F02
+               sceSDrfpStart: 0x230456F3
+               sceSdStandaloneExit: 0x261F2747
+               sceSDbgSdioStart: 0x29A8524D
+               sceKernelSysrootCorelockUnlock: 0x314AA770
+               sceSblAimgrIsDEX: 0x5945F065
+               sceKernelBootLoadModules: 0x6D7A1F18
+               sceKernelPrintfLevel: 0x752E7EEC
+               sceAuthMgrExit: 0x79241ACF
+               sceKernelSysrootCorelockLock: 0x807B4437
+               sceSblAimgrIsVITA: 0x838466E9
+               sceSblAimgrIsCEX: 0x8A416887
+               sceSblAimgrIsTest: 0x943E7537
+               sceKernelBootBootModules: 0x9A92436E
+               sceKernelGetDebugPutchar: 0x9B868276
+               sceSblAimgrIsDolce: 0xA7BD4417
+               BootModules: 0xA7D60F71
+               sceSDfMgrStart: 0xAA8005E4
+               sceKernelCpuId: 0xB506A10E
+               sceSblAimgrIsTool: 0xB6C9ACF1
+               sceSblAimgrIsGenuineDolce: 0xB6D00D6D
+               sceKernelGetDebugLevel: 0xC011935A
+               sceSblAimgrIsDiag: 0xC3DDDE15
+               sceKernelSysrootIofilemgrStart: 0xC7B77991
+               sceKernelCheckDipsw: 0xC8F4DE71
+               sceSblQafManagerIsAllowKernelDebug: 0xCE94F329
+               sceSdStandaloneInit: 0xF7AF8690
+               LoadModules: 0xFAE33FDD

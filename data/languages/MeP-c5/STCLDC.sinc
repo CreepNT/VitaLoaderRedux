@@ -1,0 +1,259 @@
+#SLEIGH doesn't let you link a split bit pattern to registers (AFAICT?).
+#This makes implementing LDC and STC super annoying if you want
+#to allow the registers' names to be displayed in the listing and
+#usable in "Patch Instruction". We can always cheat, though.
+#
+#I hope there is a divinity somewhere to forgive the sin I'm about to commit.
+
+		#0111_nnnn_iiii_100I (imm5=I||iiii) 
+		#STC Rn, imm5
+        with :op0103=0b100 {
+			#N.B. we use pcodeop to ensure the transfers are listed in decompiler output.
+	        
+	        #TODO: should we really clear the bits that are unwriteable?
+	        
+	        #pc 	-> 0 = 0b0_0000
+	        :STC Rn, pc is Rn & pc & op0000=0 & op0407=0b0000 { } #Writes to pc are ignored (nop)
+
+	        #lp 	-> 1 = 0b0_0001
+	        :STC Rn, lp is Rn & lp & op0000=0 & op0407=0b0001 { 
+	        	#Used in function epilogues, don't use pcodeop to make decomp less cluttered
+	        	lp = Rn;
+	        }
+	        
+	        #sar 	-> 2 = 0b0_0010
+	        define pcodeop write_sar;
+	        :STC Rn, sar is Rn & sar & op0000=0 & op0407=0b0010 { 
+	        	sar = zext(Rn[0,6]);
+	        	write_sar(Rn[0,6]);
+			}
+        
+        	#rpb	->  4 = 0b0_0100
+        	define pcodeop write_rpb;
+        	:STC Rn, rpb is Rn & rpb & op0000=0 & op0407=0b0100 { 
+        		rpb = Rn & ~1; 
+        		write_rpb(Rn & ~1);
+        	}
+        	
+        	#rpe	->  5 = 0b0_0101
+        	define pcodeop write_rpe;
+        	:STC Rn, rpe is Rn & rpe & op0000=0 & op0407=0b0101 { 
+        		rpe = Rn;
+        		write_rpe(Rn);
+        	}
+        	
+        	#rpc	->  6 = 0b0_0110
+        	define pcodeop write_rpc;
+        	:STC Rn, rpc is Rn & rpc & op0000=0 & op0407=0b0110 {
+				rpc = Rn;
+				write_rpc(Rn);	
+			}
+        	
+        	#hi		->  7 = 0b0_0111
+        	define pcodeop write_hi;
+        	:STC Rn, hi is Rn & hi & op0000=0 & op0407=0b0111 { 
+        		hi = Rn;
+        		write_hi(Rn);
+        	}
+        	
+			#lo		->  8 = 0b0_1000
+			define pcodeop write_lo;
+			:STC Rn, lo is Rn & lo & op0000=0 & op0407=0b1000 { 
+				lo = Rn;
+				write_lo(Rn);
+			}
+		
+@if COP_OPT == "1"
+			#mb0	-> 12 = 0b0_1100
+			define pcodeop write_mb0;
+			:STC Rn, mb0 is Rn & mb0 & op0000=0 & op0407=0b1100 { 
+				mb0 = zext(Rn:2);
+				write_mb0(Rn:2);
+			}
+			
+			#me0	-> 13 = 0b0_1101
+			define pcodeop write_me0;
+			:STC Rn, me0 is Rn & me0 & op0000=0 & op0407=0b1101 {
+				me0 = zext(Rn:2);
+				write_me0(Rn:2);
+			}
+			
+			#mb1	-> 14 = 0b0_1110
+			define pcodeop write_mb1;
+			:STC Rn, mb1 is Rn & mb1 & op0000=0 & op0407=0b1110 {
+				mb1 = zext(Rn:2);
+				write_mb1(Rn:2);
+			}
+			
+			#me1	-> 15 = 0b0_1111
+			define pcodeop write_me1;
+			:STC Rn, me1 is Rn & me1 & op0000=0 & op0407=0b1111 {
+				me1 = zext(Rn:2);
+				write_me1(Rn:2);
+			}
+@endif
+			#psw	-> 16 = 0b1_0000
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			define pcodeop write_psw;
+			:STC Rn, psw is Rn & psw & op0000=1 & op0407=0b000 {
+				psw = Rn;
+				write_psw(Rn);	
+			}
+			
+			#id		-> 17 = 0b1_0001
+			:STC Rn, id is Rn & id & op0000=1 & op0407=0b0001 { } #Read-only register
+			
+			#tmp	-> 18 = 0b1_0010
+			define pcodeop write_tmp;
+			:STC Rn, tmp is Rn & tmp & op0000=1 & op0407=0b0010 {
+				tmp = Rn;
+				write_tmp(Rn);	
+			}
+			
+			#epc	-> 19 = 0b1_0011
+			define pcodeop write_epc;
+			:STC Rn, epc is Rn & epc & op0000=1 & op0407=0b0011 {
+				epc = Rn;
+				write_epc(Rn);
+			}
+			
+			#exc	-> 20 = 0b1_0100
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			define pcodeop write_exc;
+			:STC Rn, exc is Rn & exc & op0000=1 & op0407=0b0100 { 
+				exc = Rn;
+				write_exc(Rn);	
+			}
+			
+			#cfg	-> 21 = 0b1_0101
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			define pcodeop write_cfg;
+			:STC Rn, cfg is Rn & cfg & op0000=1 & op0407=0b0101 { 
+				cfg = Rn;
+				write_cfg(Rn);
+			}
+			
+			#npc	-> 23 = 0b1_0111
+			define pcodeop write_npc;
+			:STC Rn, npc is Rn & npc & op0000=1 & op0407=0b0111 { 
+				npc = Rn;
+				write_npc(Rn);
+			}
+		
+@if DBG_OPT == "1"
+			#dbg	-> 24 = 0b1_1000
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			define pcodeop write_dbg;
+			:STC Rn, dbg is Rn & dbg & op0000=1 & op0407=0b1000 { 
+				dbg = Rn;
+				write_dbg(Rn);	
+			}
+			
+			#depc	-> 25 = 0b1_1001
+			define pcodeop write_depc;
+			:STC Rn, depc is Rn & depc & op0000=1 & op0407=0b1001 { 
+				depc = Rn;
+				write_depc(Rn);
+			}
+@endif
+			#opt	-> 26 = 0b1_1010
+			:STC Rn, opt is Rn & opt & op0000=1 & op0407=0b1010 { } #Read-only register
+			
+			#rcfg	-> 27 = 0b1_1011
+			:STC Rn, rcfg is Rn & rcfg & op0000=1 & op0407=0b1011 { } #Read-only register
+			
+			#ccfg	-> 28 = 0b1_1100
+			:STC Rn, ccfg is Rn & ccfg & op0000=1 & op0407=0b1100 { } #Read-only register
+        }
+
+		#0111_nnnn_iiii_101I (imm5=I||iiii)
+        #:LDC Rn,imm5
+		with :op0103=0b101 {
+			#Super Duper Hackerino 2: Electric Boogaloo!
+			
+			#N.B. we use pcodeop to ensure the transfers are listed in decompiler output.
+	        
+	        #TODO: should we really clear the bits that are unwriteable?
+	        
+	        #pc 	-> 0 = 0b0_0000
+	        :LDC Rn, pc is Rn & pc & op0000=0 & op0407=0b0000 { Rn = pc; }
+
+	        #lp 	-> 1 = 0b0_0001
+	        :LDC Rn, lp is Rn & lp & op0000=0 & op0407=0b0001 { Rn = lp; }
+	        
+	        #sar 	-> 2 = 0b0_0010
+	        :LDC Rn, sar is Rn & sar & op0000=0 & op0407=0b0010 { Rn = sar; }
+        
+        	#rpb	->  4 = 0b0_0100
+        	:LDC Rn, rpb is Rn & rpb & op0000=0 & op0407=0b0100 { Rn = rpb; }
+        	
+        	#rpe	->  5 = 0b0_0101
+        	:LDC Rn, rpe is Rn & rpe & op0000=0 & op0407=0b0101 { Rn = rpe; }
+        	
+        	#rpc	->  6 = 0b0_0110
+        	:LDC Rn, rpc is Rn & rpc & op0000=0 & op0407=0b0110 { Rn = rpc; }
+        	
+        	#hi		->  7 = 0b0_0111
+        	:LDC Rn, hi is Rn & hi & op0000=0 & op0407=0b0111 { Rn = hi; }
+        	
+			#lo		->  8 = 0b0_1000
+			:LDC Rn, lo is Rn & lo & op0000=0 & op0407=0b1000 { Rn = lo; }
+			
+@if COP_OPT == "1"
+			#mb0	-> 12 = 0b0_1100
+			:LDC Rn, mb0 is Rn & mb0 & op0000=0 & op0407=0b1100 { Rn = mb0; }
+			
+			#me0	-> 13 = 0b0_1101
+			:LDC Rn, me0 is Rn & me0 & op0000=0 & op0407=0b1101 { Rn = me0; }
+			
+			#mb1	-> 14 = 0b0_1110
+			:LDC Rn, mb1 is Rn & mb1 & op0000=0 & op0407=0b1110 { Rn = mb1; }
+			
+			#me1	-> 15 = 0b0_1111
+			:LDC Rn, me1 is Rn & me1 & op0000=0 & op0407=0b1111 { Rn = me1; }
+@endif
+			#psw	-> 16 = 0b1_0000
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			:LDC Rn, psw is Rn & psw & op0000=1 & op0407=0b000 { Rn = psw; }
+			
+			#id		-> 17 = 0b1_0001
+			:LDC Rn, id is Rn & id & op0000=1 & op0407=0b0001 { Rn = id; }
+			
+			#tmp	-> 18 = 0b1_0010
+			:LDC Rn, tmp is Rn & tmp & op0000=1 & op0407=0b0010 { Rn = tmp; }
+			
+			#epc	-> 19 = 0b1_0011
+			:LDC Rn, epc is Rn & epc & op0000=1 & op0407=0b0011 { Rn = epc; }
+			
+			#exc	-> 20 = 0b1_0100
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			:LDC Rn, exc is Rn & exc & op0000=1 & op0407=0b0100 { Rn = exc; }
+			
+			#cfg	-> 21 = 0b1_0101
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			:LDC Rn, cfg is Rn & cfg & op0000=1 & op0407=0b0101 { Rn = cfg; }
+			
+			#npc	-> 23 = 0b1_0111
+			:LDC Rn, npc is Rn & npc & op0000=1 & op0407=0b0111 { Rn = npc; }
+		
+@if DBG_OPT == "1"
+			#dbg	-> 24 = 0b1_1000
+			#TODO: SOME BITS ARE SUPPOSED TO BE READ-ONLY
+			:LDC Rn, dbg is Rn & dbg & op0000=1 & op0407=0b1000 { Rn = dbg; }
+			
+			#depc	-> 25 = 0b1_1001
+			:LDC Rn, depc is Rn & depc & op0000=1 & op0407=0b1001 { Rn = depc; }
+@endif
+			#opt	-> 26 = 0b1_1010
+			:LDC Rn, opt is Rn & opt & op0000=1 & op0407=0b1010 { Rn = opt; }
+			
+			#rcfg	-> 27 = 0b1_1011
+			:LDC Rn, rcfg is Rn & rcfg & op0000=1 & op0407=0b1011 { Rn = rcfg; }
+			
+			#ccfg	-> 28 = 0b1_1100
+			:LDC Rn, ccfg is Rn & ccfg & op0000=1 & op0407=0b1100 { Rn = ccfg; }		
+		}	
+
+    
+    
+ 

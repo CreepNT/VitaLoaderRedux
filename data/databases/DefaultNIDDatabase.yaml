@@ -1,0 +1,246 @@
+#Version 3 scheme:
+#
+# kernel: false becomes syscall: true
+# modules->nid becomes modules->fingerprint
+#
+#
+#This file aims to be sorted by NID, but may not be for time constraints.
+#
+version: 3
+firmware: 3.60 #even though we have NIDs for 0.9xx-only functions :D
+modules:
+   #######################################################################
+   #                    SECURE STATE (TZS) MODULES                       #
+   #                                                                     #
+   #   Note that the _TZS suffix is not present in module name, but is   #
+   #    required here to avoid a clash with the Non-Secure module        #
+   #######################################################################
+#   SceCdram:
+#      fingerprint: 0x1EE352F6
+#   SceDriverTzs:
+#      fingerprint: 0xC4AF0386
+   SceExcpmgr_TZS:
+      fingerprint: 0xDA718079
+      libraries:
+         SceExcpmgrForTZS:
+            nid: 0x8F526F35
+            functions:
+               sceKernel_GetExcpmgrContext: 0x07A5790B
+               sceKernelReleaseExceptionHandler: 0x166C9362
+               sceKernelReleaseDefaultExceptionHandler: 0x6282E52C
+               sceKernelRegisterDefaultExceptionHandler: 0xA0434735
+               sceKernelRegisterMonitorEntry: 0xAC297406
+               sceKernelRegisterExceptionHandler: 0xDD4C680D
+#   SceKernelBusError_TZS:
+#      fingerprint: 0xAA8F8DA3
+   SceKernelDmacMgr_TZS:
+      fingerprint: 0x1EE5B206
+      libraries:
+         SceDmacmgrForTZS:
+            nid: 0xD180F06A
+            functions:
+               SceDmacmgrForTZS_184CF142: 0x184CF142
+   SceKernelIntrMgr_TZS:
+      fingerprint: 0xD47DA083
+      libraries:
+         SceIntrmgrForTZS:
+            nid: 0xEC3056FE
+            functions:
+               sceKernelGenerateSoftIntr: 0x28BBA975
+               sceKernelDisableIntr: 0x4F39B381
+               sceKernelIsIntrContext: 0x636F4549
+               sceKernelRegisterIntrHandler: 0x6B84DA8F
+               sceKernelReleaseIntrHandler: 0x75A0F189
+               sceKernelSetIntrPriority: 0x9168E78E
+               sceKernelResumeIntr: 0x92DE2E92
+               sceKernelEnableIntr: 0x98E38390
+               sceKernelSetIntrTargetCpu: 0xAA3C4787
+               sceKernelSuspendIntr: 0xBFBEAB5C
+               sceKernelUsleep: 0xC0908EA9
+               sceKernelRegisterMonitorCallHandler: 0xC188114F
+               sceKernelGetIntrTargetCpu: 0xF3B92D98
+               sceKernelGetIntrPriority: 0xFEAC9841
+   SceSblSmsched_TZS:
+      fingerprint: 0x5B25A8DA
+      libraries:
+         SceSblSmSchedForTZS:
+            nid: 0x5A2E5C09
+            functions:
+               sceSblSmSchedGetStatus: 0x073A984E
+               #SceSblSmSchedForTZS_A4BF6A78 may be sceSblSmSchedReleaseIntrHandler
+               sceSblSmSchedWait: 0xC9D2138B
+               sceSblSmSchedKill: 0xDD5CDAE1
+               sceSblSmSchedStop: 0xE72F2886
+#   SceSysconTzs:
+#      fingerprint: 0x2F238BC5
+   SceSysmem_TZS:
+      fingerprint: 0x8266B998
+      libraries:
+         SceSysmemForTZS:
+            nid: 0x08680060
+            functions:
+               sceKernelGetKernelPartition: 0xE074C866
+               sceKernelAllocMemBlock: 0x0C510B46
+               sceKernelSysrootGetKermitRevision: 0x1345678
+               sceKernelDeleteHeap: 0x624454BC
+               sceKernelCreateHeap: 0x56A16D84
+               sceKernelAllocHeapMemoryWithOption: 0xEA712806
+               sceKernelAllocHeapMemory: 0x473871D8
+               sceKernelFreeHeapMemory: 0x42FB5B12
+               sceKernelAllocUncacheHeapMemoryWithOption: 0x6A3FBAF0
+               sceKernelFreeUncacheHeapMemory: 0x2F18E288
+               sceKernelNameHeapDelete: 0xF459D09D
+               sceKernelNameHeapInsert: 0x42AD34AB
+               sceKernelSetSuspendIntrFunc: 0xB4306D21
+               sceKernelSetResumeIntrFunc: 0x418111B0
+               sceKernelAddressSpaceUnmap: 0x31273DC7
+               sceKernelGetMemBlockBase: 0xE1DEDFF4
+               sceKernelFreeMemBlock: 0x658EACE3
+               sceKernelAllocMemBlockForKernel: 0x402EB970
+               sceKernelAllocPartitionMemBlock: 0x0028E26C
+               sceKernelAllocPartitionStackMemBlock: 0x69022B7F
+               sceKernelVAtoPA: 0x1DEADF6C
+               sceKernelVARangeToPAVector: 0x9D43E416
+               sceKernelSetSuspendIntrFunc: 0xB4306D21
+               sceKernelSetResumeIntrFunc: 0x418111B0
+         SceDipswForTZS:
+            nid: 0x9DBF584C
+            functions:
+               sceKernelCheckDipsw: 0xA98FC2FD
+         SceUartForTZS:
+            nid: 0xA1D740D7
+            functions:
+               sceUartWrite: 0x3AFD5E71
+         SceDebugForTZS:
+            nid: 0x028FFADB
+            functions:
+               sceKernelDebugModuleStart2: 0x32E3D4B9
+               sceKernelRegisterKprintfHandler: 0xD36F27BA
+               sceKernelDebugPutchar: 0xD36F27BA
+               sceKernelStopped: 0xCB502FD1
+               sceKernelAssert: 0x2F9B8AA8
+               sceKernelAssertLevel: 0x618F89E6
+               sceKernelGetAssertLevel: 0xF851BA4F
+               sceKernelPrintDebugLog: 0x85BF33E1
+               _sceKernelPrintDebugLog: 0x4FF6536C
+               sceKernelPrintf: 0x1655E0E3
+               sceKernelPrintfLevel: 0xC70CBB58
+               sceKernelPrintfCore0: 0x08F8AD70
+               sceKernelPrintfLevelCore0: 0xD4E6A0C0
+               sceKernelSetMinimumLogLevel: 0x898E417E
+               _sceKernelWriteDebugLog: 0x95E1A80B
+         SceSysclibForTZS:
+            nid: 0xC839BB78
+            functions:
+               __stack_chk_fail: 0xE5457B97
+               strncpy: 0x361850BB
+               memcpy: 0xBE3AF2EE
+               memset: 0x956DB750
+         SceSysrootForTZS:
+            nid: 0xFEFF641D
+            functions:
+               sceKernelSysrootBacktrace: 0xF26A5E68
+               sceKernelSysrootPrintBacktrace: 0x463EA380
+               sceKernelSysrootShowCallerInfo: 0x2F3D9414
+               sceKernelSysrootGetModulePrivate: 0xC9DD8EB3
+               sceKernelSysrootSetModulePrivate: 0xEA572BD9
+               sceKernelSysrootGetSharedMemory: 0x1C96096F
+               sceKernelSysrootSetSharedMemory: 0x45EEB2E0
+               sceKernelSysrootAlloc: 0x1A9E1D28
+               sceKernelSysrootGetKblParam: 0x29C1049E
+               sceKernelSysrootGetErnieWakeupFactor: 0x8E871C6D
+               sceKernelSysrootGetKermitRevision: 0xDB3DAB76
+               sceKernelSysrootGetVbaseMonitorVector: 0xD4E6D8E8
+               sceKernelSysrootGetVbaseResetVector: 0x2460ADFA
+               sceKernelSysrootGetKernelMMUContext: 0xA8B7DAF9
+               sceKernelSysrootCorelockLock: 0xD653194A
+               sceKernelSysrootCorelockUnlock: 0x2F5FD9A8
+               sceKernelIsColdBoot: 0x0567B4B9
+               sceKernelIsSecureState: 0xEFA54B46
+         SceQafMgrForTZS:
+            nid: 0x637069DD
+            functions:
+               sceSblQafManagerIsAllowKernelDebug: 0x54D22D74
+         ScePmMgrForTZS:
+            nid: 0x27F1AFD8
+            functions:
+               sceSblPmMgrGetProductMode: 0xCF554E69
+         SceSblAIMgrForTZS:
+            nid: 0x60D19047
+            functions:
+               sceSblAIMgrIsCEX: 0x536B38F4
+         SceCpuForTZS:
+            nid: 0xC516B23E
+            functions:
+               atomicCompareAndSet8: 0xEFD6F289
+               sceKernelCpuId: 0x44C423D3
+               sceKernelGetCpsr: 0x324727D1
+               sceKernelGetSpsr: 0x72CA4F7A
+               sceKernelGetVmaccessRange: 0x98BF47D3
+               sceKernelSetUndModeStack: 0xDF17E4A3
+               sceKernelSetAbtModeStack: 0xF832C341
+               sceKernelSetFIQModeStack: 0x49AD8B60
+               sceKernelSetIRQModeStack: 0xD9013440
+               sceKernelSetSvcModeStack: 0xFB1D3114
+               sceKernelSetMonModeStack: 0xC2A428F3
+               sceKernelPleFlushRequest: 0xC4137AED
+               sceKernelDomainTextMemcpy: 0x39FCFCC2
+               sceKernelDcacheCleanRange: 0x190D96D5
+               sceKernelDcacheInvalidateRange: 0xCDD46655
+               sceKernelDcacheCleanInvalidateAll: 0x7CCE9480
+               sceKernelL1DcacheCleanRange: 0x17A88E69
+               sceKernelL1DcacheCleanInvalidateAll: 0x0A15B41C
+               sceKernelL1IcacheInvalidateRange: 0xB421FAFD
+               sceKernelL1IcacheInvalidateEntireAllCore: 0xA5965CBF
+               sceKernelSendEvent: 0xF42F079B
+               sceKernelWaitForEvent: 0x40DEC1B6
+               sceKernelSpinlockLowLock: 0x71FD9AB5
+               sceKernelSpinlockLowUnlock: 0xCD98416C
+               sceKernelSpinlockLowLockCpuSuspendIntr: 0xD67A4356
+               sceKernelSpinlockLowUnlockCpuResumeIntr: 0xB8F00FBE
+   #####################################################################
+   #                    NON-SECURE STATE MODULES                       #
+   #####################################################################
+   NSKBL:
+      libraries:
+         SceKblForKernel:
+            nid: 0xD0FC2991
+            functions:
+               sceKernelPrintf: 0x13A5ABEF
+               sceKernelSysrootProcessmgrStart2: 0x161D6FCC
+               sceKernelSysrootThreadMgrStartAfterProcess: 0x1DB28F02
+               sceSDrfpStart: 0x230456F3
+               sceSdStandaloneExit: 0x261F2747
+               sceSDbgSdioStart: 0x29A8524D
+               sceKernelSysrootCorelockUnlock: 0x314AA770
+               sceSblAimgrIsDEX: 0x5945F065
+               sceKernelBootLoadModules: 0x6D7A1F18
+               sceKernelPrintfLevel: 0x752E7EEC
+               sceAuthMgrExit: 0x79241ACF
+               sceKernelSysrootCorelockLock: 0x807B4437
+               sceSblAimgrIsVITA: 0x838466E9
+               sceSblAimgrIsCEX: 0x8A416887
+               sceSblAimgrIsTest: 0x943E7537
+               sceKernelBootBootModules: 0x9A92436E
+               sceKernelGetDebugPutchar: 0x9B868276
+               sceSblAimgrIsDolce: 0xA7BD4417
+               BootModules: 0xA7D60F71
+               sceSDfMgrStart: 0xAA8005E4
+               sceKernelCpuId: 0xB506A10E
+               sceSblAimgrIsTool: 0xB6C9ACF1
+               sceSblAimgrIsGenuineDolce: 0xB6D00D6D
+               sceKernelGetDebugLevel: 0xC011935A
+               sceSblAimgrIsDiag: 0xC3DDDE15
+               sceKernelSysrootIofilemgrStart: 0xC7B77991
+               sceKernelCheckDipsw: 0xC8F4DE71
+               sceSblQafManagerIsAllowKernelDebug: 0xCE94F329
+               sceSdStandaloneInit: 0xF7AF8690
+               LoadModules: 0xFAE33FDD
+   SceLibKernel:
+      libraries:
+         SceLibKernel:
+            nid: 0xCAE9ACE6
+            functions:
+               __stack_chk_fail: 0x37691BF8
+            variables:
+               __stack_chk_guard: 0x93B8AA67   

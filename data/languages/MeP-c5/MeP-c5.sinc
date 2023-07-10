@@ -1,0 +1,1781 @@
+# Main slaspec must define the following things:
+#  * endianess
+#  * alignment
+#  * the ENDIAN macro (either "little" or "big")
+#  * the TIMER_CHANNELS (between 1 and 4)
+#
+# Main slaspec may optionally define the following macros as 1 to enable MeP core options:
+#
+#   VL32_OPT: The MeP core is extended with a 32-bit VLIW coprocessor  <--| Only one of these
+#   VL64_OPT: The MeP core is extended with a 64-bit VLIW coprocessor  <--| options may be enabled
+#
+#   MUL_OPT: The 32-bit Multiply instruction option is ON.
+#   DIV_OPT: The 32-bit divide instruction option is ON.
+#   BIT_OPT: The bit manipulation instruction option is ON.
+#   LDZ_OPT: The leading zero option is ON.
+#   ABS_OPT: The absolute difference instruction option is ON.
+#   AVE_OPT: The average instruction option is ON.
+#   MIN_OPT: The MIN/MAX instruction option is ON.
+#   CLP_OPT: The clip instruction option is ON.
+#   SAT_OPT: The saturation instruction option is ON.
+#   DBG_OPT: The debug support function is ON.
+#   PTO_OPT: The program trace option is ON.			#useless?
+#   HWE_OPT: The hardware engine option is ON.			#useless?
+#   UCI_OPT: The User Custom Instruction option is ON.
+#	DSP_OPT: The DSP option is ON.
+#	COP_OPT: The coprocessor option is ON.
+#
+#
+# If the VL32_OPT or VL64_OPT or COP_OPT macro is defined as 1, the following macros
+# can be defined as 1 to alter the behaviour of the Core instruction set:
+#
+# 	LARGE_CP_REGNUM: The coprocessor has more than 16 general-purpose registers
+#                    If defined as 1, thirty-two 64-bit CP GPRs will be created
+#					 instead of 16 by default.
+#
+#	NO_DEFAULT_CP_INSTR: Disables the built-in implementation of the CP instruction
+#						 This macro must be defined as 1 if you implement the CP 
+#						 instruction in your slaspec.
+#
+#
+# If the UCI_OPT macro is defined as 1, the following macro can be defined as 1:
+#
+#	NO_DEFAULT_UCI_INSTR: Disables the built-in implementation of the UCI instruction.
+#						  This macro must be defined as 1 if you implement the UCI
+#						  instruction in your slaspec.
+#
+#
+# If the DSP_OPT macro is defined as 1, the following macro can be defined as 1:
+#
+#	NO_DEFAULT_DSP_INSTR: Disables the built-in implementation of the DSP instruction.
+#						  This macro must be defined as 1 if you implement the
+#						  DSP, DSP0 and DSP1 instructions in your slaspec.
+#
+#
+#TODO: MeP-c5 instructions
+#
+
+#Ensure all non-provided macros are defined as 0.
+@include "Options.sinc"
+
+define space ram type=ram_space size=4 wordsize=1 default;
+define space register type=register_space size=4;
+
+#Ideally, Control registers and Control Bus Space would be in their own register_space,
+#but Ghidra does not support having more than one for whatever reason... (not even documented!?)
+#define space creg type=register_space size=1 wordsize=4; #True pointer size is 5 bits
+#define space cbus type=register_space size=2 wordsize=4;
+
+#General-purpose registers
+define register offset=0x0 size=4 [
+	r0	r1	r2	r3	r4	r5	r6  r7
+	r8	r9	r10 r11 r12	tp  gp  sp
+];
+
+#Control registers
+
+@define CREG_OFFSET 		0x10000
+@define CREG_MODULO_OFFSET 	0x10030
+@define CREG_DEBUG_OFFSET 	0x10060
+
+define register offset=$(CREG_OFFSET) size=4 [
+	pc    lp    sar   _     rpb   rpe   rpc   hi
+	lo    _     _     _     _     _     _     _
+	psw   id    tmp   epc   exc   cfg   _     npc
+	_     _     opt   rcfg  ccfg  _     _     _
+];
+
+@if COP_OPT == "1"
+define register offset=$(CREG_MODULO_OFFSET) size=4 [
+	mb0 me0 mb1 me1
+];
+@endif
+
+@if DBG_OPT == "1"
+define register offset=$(CREG_DEBUG_OFFSET) size=4 [
+	dbg depc
+];
+@endif
+
+#BUG: Ghidra assumes contextreg to be 64-bit.
+#Temporarily move these context bits to contextreg.
+
+#define context psw
+#	OM=(12,12)	#Operation Mode (0 if MeP in Core mode, 1 if MeP in VLIW mode)
+#;
+
+#define context rpe
+#	ELR=(0,0)		#EndLess Repeat flag
+#;
+
+#Co-processor registers
+#Assume registers are 64-bit regardless of actual size (can be 32)
+
+@define CP_OFFSET 0x18000
+@define CP_CREG_OFFSET 0x18200 #For usage by coprocessor implementations
+
+define register offset=$(CP_OFFSET) size=8 [
+	c0	c1	c2	c3	c4	c5	c6	c7
+	c8	c9	c10	c11	c12	c13	c14	c15
+@ifdef LARGE_CP_REGNUM
+	c16 c17 c18 c19 c20 c21 c22 c23
+	c24 c25 c26 c27 c28 c29 c30 c31
+@endif
+	cp_flag
+];
+
+# Context register
+@define CONTEXTREG_OFFSET 0x19FF8
+define register offset=$(CONTEXTREG_OFFSET) size=8 contextreg;
+define context contextreg
+	ELR=(0,0) noflow
+	OM=(12,12)
+	
+	CP_INST_MODE=(20,27) noflow
+	
+	#Number of instructions remaining, including the
+	#one marked, in REPEAT/EREPEAT block (either 2 or 1)
+	REPEAT_REMAINING=(28,29) noflow
+	
+	#Target of a REPEAT/EREPEAT jump
+	REPEAT_START=(32,63) noflow
+;
+
+###########################################
+#          Control Bus registers          #
+###########################################
+
+#
+# NOTE: all offsets and sizes have to
+# be specified in bytes - hence, the
+# offset for all registers has been set
+# to their CBUS address multiplied by 4. 
+#
+
+@define CBUS_OFFSET 0x20000
+@define CBUS_TIMER_CH0 0x21000
+@define CBUS_TIMER_CH1 0x21040
+@define CBUS_TIMER_CH2 0x21080
+@define CBUS_TIMER_CH3 0x210C0
+@define CBUS_TIMER_CH4 0x21100
+
+#INTC Interrupt Controller
+define register offset=$(CBUS_OFFSET) size=4 [
+	IVR	ISR IER IET ILR0 ILR1 ILR2 ILR3	
+];
+
+#Timer/Counter region
+define register offset=$(CBUS_TIMER_CH0) size=4 [
+	CNT0	CMP0	TEN0	TCR0	TIS0	TCD0
+];
+
+@if (TIMER_CHANNELS == "2") || (TIMER_CHANNELS == "3") || (TIMER_CHANNELS == "4")
+	define register offset=$(CBUS_TIMER_CH1) size=4 [
+		CNT1	CMP1	TEN1	TCR1	TIS1	TCD1
+	];
+@endif
+
+@if (TIMER_CHANNELS == "3") || (TIMER_CHANNELS == "4")
+	define register offset=$(CBUS_TIMER_CH2) size=4 [
+		CNT2	CMP2	TEN2	TCR2	TIS2	TCD2
+	];
+@endif
+
+@if (TIMER_CHANNELS == "4")
+	define register offset=$(CBUS_TIMER_CH1) size=4 [
+		CNT3	CMP3	TEN3	TCR3	TIS3	TCD3
+	];
+@endif
+
+
+#16-bit instruction,
+#or first part of 32-bit instructions
+define token instr (16)
+    major=(12,15)
+    sub=(0,3)
+    
+    Rn07=(8,10)
+    CRnExt=(8,11) #For c16-c31
+    CRn=(8,11)
+    Rn=(8,11)
+    Rm=(4,7)
+    Rl=(0,3)
+    
+    cccc=(8,11)
+
+    op0000=(0,0)
+	op0001=(0,1)
+	op0002=(0,2)
+	op0103=(1,3)
+    op0407=(4,7)
+    op0611=(6,11)
+    op0707=(7,7)
+    op0811=(8,11)
+    op1011=(10,11)
+    op1111=(11,11)
+    
+    imm0006=(0,6)
+    imm0007=(0,7)
+    imm0106=(1,6)
+    imm0107=(1,7) #bad?!
+    imm0206=(2,6)
+    imm0207=(2,7) #bad?!
+    imm0307=(3,7)
+    imm0405=(4,5)
+    imm0407=(4,7)
+    imm0410=(4,10)
+    imm0411=(4,11)
+    imm0809=(8,9)
+    imm0810=(8,10)
+    imm0811=(8,11)
+    
+    simm0107=(1,7) signed
+    simm0207=(2,7) signed
+    simm0111=(1,11) signed
+;
+
+#Second part of 32-bit instructions
+define token instr2(16)
+	wop0000=(0,0)
+	wop0001=(0,1)
+	wop0002=(0,2)
+	wop0003=(0,3)
+	wop0203=(2,3)
+	wop0303=(3,3)
+	wop0307=(3,7)
+	wop0311=(3,11)
+	wop0411=(4,11)
+	wop0811=(8,11)
+	wop0815=(8,15)
+	wop1215=(12,15)
+	
+	
+	wimm0307=(3,7)
+	
+	wimm16=(0,15)
+
+	wsimm0007=(0,7) signed
+	wsimm0107=(1,7) signed
+	wsimm0207=(2,7) signed
+	wsimm0307=(3,7) signed
+	wsimm16=(0,15) signed
+	
+	wdisp16=(0,15) signed
+;
+
+#Additional 32-bit word for 64-bit VLIW operation mode
+define token vliw64_instr32(32)
+	v64_imm32=(0,31)
+;
+
+attach variables
+    [ Rn Rm Rl ]
+    [ r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 tp gp sp ];
+
+attach variables CRn
+	[ c0 c1 c2 c3 c4 c5 c6 c7 c8 c9 c10 c11 c12 c13 c14 c15 ];
+
+attach variables CRnExt
+	[ c16 c17 c18 c19 c20 c21 c22 c23 c24 c25 c26 c27 c28 c29 c30 c31 ];
+
+attach variables Rn07
+    [ r0 r1 r2 r3 r4 r5 r6 r7 ];
+
+#--------------------------#
+#          Macros          #
+#--------------------------#
+
+macro SET_hi_lo(qword) {
+	hi = qword(4);
+	lo = qword:4;
+}
+
+#Is this good enough?
+#Should we use a TMode-like pseudoregister?
+macro SET_OM(mode) {
+	mode = (mode & 1:4);
+	psw = (psw | (mode << 12));
+}
+
+macro perform_return(reg) {
+@ifdef HAS_VLIW
+	if (reg:1 & 1:1)
+		goto <return_vliw>;
+@endif
+	return [reg & ~1:4];
+
+@ifdef HAS_VLIW
+<return_vliw>
+	SET_OM(1);
+@if VL32_OPT == "1"
+	return [reg & ~3:4];
+@else #VL64_OPT
+	return [reg & ~7:4];
+@endif
+@endif
+}
+
+#--------------------------#
+#          Tables          #
+#--------------------------#
+
+BxxZTarget: target is simm0107 [ target = inst_start + (simm0107 << 1); ] {
+	export *:4 target;
+}
+
+Bdisp12Target: target is simm0111 [ target = inst_start + (simm0111 << 1); ] {
+	export *:4 target;
+}
+
+BSRTarget: target is major=13 & sub=9 & op1111=1 & imm0410; wdisp16 [
+	target = inst_start + ((wdisp16 << 8) | (imm0410 << 1));
+] {
+	export *:4 target;
+}
+
+BcondTarget: target is major=14; wdisp16 [ target = inst_start + (wdisp16 << 1); ] {
+	export *:4 target;
+}
+
+@if COP_OPT == "1"
+BCPcondTarget: target is major=13 & op0811=0b1000; wdisp16 [ target = inst_start + (wdisp16 << 1); ] {
+	export *:4 target;
+}
+@endif
+
+@if __HAS_VLIW == "1" && defined(__VLIW_ALIGN)
+	BSRVTarget: target is major=13 & sub=11 & op1111=1 & imm0410; wdisp16 [
+		target = (inst_start + ( (wdisp16 << 8) | (imm0410 << 1) ) ) & ~ $(__VLIW_ALIGN);
+		OM = 1;
+		globalset(target, OM);
+	] {
+		export *:4 target;
+	}
+@endif
+
+RmMem: "("^Rm^")" is Rm {
+	export Rm;
+}
+
+@if COP_OPT == "1"
+RmMemInc: "("^Rm^"+)" is Rm {
+	export Rm;
+}
+
+RmDisp16: wdisp16^"("^Rm^")" is Rm; wdisp16 {
+	local addr:4 = Rm + wdisp16;
+	export addr;
+}
+@endif
+
+SpDisp7: disp7^"("^sp^")" is imm0206 & sp [ disp7 = imm0206 << 2; ] {
+	local addr:4 = (sp + disp7) & ~3;
+	export *:4 addr;
+}
+
+TpDisp7Word: disp7^"("^tp^")" is imm0206 & tp [ disp7 = imm0206 << 2; ] {
+	local addr:4 = (tp + disp7) & ~3;
+	export *:4 addr;
+}
+
+TpDisp7Half: disp7^"("^tp^")" is imm0106 & tp [ disp7 = imm0106 << 1; ] {
+	local addr:4 = (tp + disp7) & ~1;
+	export *:2 addr;
+}
+
+TpDisp7Byte: imm0006^"("^tp^")" is imm0006 & tp {
+	local addr:4 = tp + imm0006;
+	export *:1 addr;
+}
+
+RmDisp16Word: wdisp16^"("^Rm^")" is Rm; wdisp16 {
+	local addr:4 = (Rm + wdisp16) & ~3;
+	export *:4 addr;
+}
+
+RmDisp16Half: wdisp16^"("^Rm^")" is Rm; wdisp16 {
+	local addr:4 = (Rm + wdisp16) & ~1;
+	export *:2 addr;
+}
+
+RmDisp16Byte: wdisp16^"("^Rm^")" is Rm; wdisp16 {
+	local addr:4 = Rm + wdisp16;
+	export *:1 addr;
+}
+
+CBusReg: (wimm16) is wimm16 {
+	local dst:4 = $(CBUS_OFFSET) + 4 * wimm16;
+	export *[register]:4 dst;
+}
+
+RepeatBlockStart: is REPEAT_START {
+	export *[ram]:4 REPEAT_START;
+}
+
+#--------------------------#
+# MeP Core Instruction Set #
+#--------------------------#
+
+with :OM=0 {
+#Generic instruction patterns (for REPEAT/EREPEAT) must come before any instruction
+	
+	#Penultimate instruction of REPEAT/EREPEAT block
+	#This instruction is the one REPEAT/EREPEAT opcode points to.
+	:^instruction is REPEAT_REMAINING=2 & instruction [
+		#Markup next instruction for proper handling
+		REPEAT_REMAINING = 1;
+		globalset(inst_next, REPEAT_REMAINING);
+		globalset(inst_next, REPEAT_START);
+		globalset(inst_next, ELR);
+		
+		#Remove attribute for correct decoding during build
+		REPEAT_REMAINING = 0;
+	] {
+		build instruction;
+	}
+	
+	#Ultimate instruction of REPEAT block.
+	#This instruction performs branching based on the value of rpc.
+	:^instruction is REPEAT_REMAINING=1 & ELR=0 & instruction & RepeatBlockStart [
+		REPEAT_REMAINING = 0;
+	] {
+		build instruction;
+		rpc = rpc - 1;
+		if (rpc == 0)
+			goto <exit>;
+
+		goto RepeatBlockStart;
+	<exit>
+	}
+
+	#Ultimate instruction of EREPEAT block. Branches to repeat block start.
+	:^instruction is REPEAT_REMAINING=1 & ELR=1 & instruction & RepeatBlockStart [
+		REPEAT_REMAINING = 0;
+	] {
+		build instruction;
+		goto RepeatBlockStart;
+	}
+
+    #-----------------#
+    # Major Opcode 0  #
+    #-----------------#
+
+    with :major=0 {
+        :MOV Rn,Rm is sub=0 & Rn & Rm { #0000_nnnn_mmmm_0000
+            Rn = Rm;
+        }
+
+		#
+        #    MeP-c4 Instruction Set Manual:
+        #
+        #The instruction "mov $0, $0" works as a NOP (no operation).
+        #Hazards are not detected in relation to operand $0.
+        #No write is performed to R0 ($0).
+        #
+        :NOP is sub=0 & Rn=0 & Rm=0 {}
+
+        :NEG Rn,Rm is sub=1 & Rn & Rm { #0000_nnnn_mmmm_0001
+            Rn = ~Rm;
+        }
+
+        :SLT3 r0,Rn,Rm is sub=2 & r0 & Rn & Rm { #0000_nnnn_mmmm_0010
+            r0 = zext(Rn s< Rm);
+		}
+
+        :SLTU3 r0,Rn,Rm is sub=3 & r0 & Rn & Rm { #0000_nnnn_mmmm_0011
+            r0 = zext(Rn < Rm);
+        }
+
+        :SUB Rn,Rm is sub=4 & Rn & Rm { #0000_nnnn_mmmm_0100
+            Rn = Rn - Rm;
+        }
+        
+        :SBVCK3 r0,Rn,Rm is sub=5 & Rn & Rm & r0 { #0000_nnnn_mmmm_0101
+        #TODO: is this correct?
+        	r0 = zext(sborrow(Rn, Rm));
+        }
+
+		:ADVCK3 r0,Rn,Rm is sub=7 & Rn & Rm & r0 { #0000_nnnn_mmmm_0111
+		#TODO: is this correct?
+			r0 = zext(scarry(Rn, Rm));
+		}
+		
+		:SB Rn,RmMem is sub=8 & Rn & RmMem { #0000_nnnn_mmmm_1000
+			*:1 RmMem = Rn:1;
+		}
+		
+		:SH Rn,RmMem is sub=9 & Rn & RmMem { #0000_nnnn_mmmm_1001
+			*:2 RmMem = Rn:2;
+		}
+		
+		:SW Rn,RmMem is sub=10 & Rn & RmMem { #0000_nnnn_mmmm_1010
+			*:4 RmMem = Rn;
+		}
+		
+		:LBU Rn,RmMem is sub=11 & Rn & RmMem { #0000_nnnn_mmmm_1011
+			Rn = *:1 RmMem;
+		}
+		
+		:LB Rn,RmMem is sub=12 & Rn & RmMem { #0000_nnnn_mmmm_1100
+			Rn = sext(*:1 RmMem);
+		}
+		
+		:LH Rn,RmMem is sub=13 & Rn & RmMem { #0000_nnnn_mmmm_1101
+			Rn = sext(*:2 RmMem);
+		}
+		
+		:LW Rn,RmMem is sub=14 & Rn & RmMem { #0000_nnnn_mmmm_1110
+			Rn = *:4 RmMem;
+		}
+		
+		:LHU Rn,RmMem is sub=15 & Rn & RmMem { #0000_nnnn_mmmm_1111
+			Rn = *:2 RmMem;
+		}
+    }
+
+    #----------------#
+    # Major Opcode 1 #
+    #----------------#
+
+	with :major=1 {
+		:OR Rn,Rm is sub=0 & Rn & Rm { #0001_nnnn_mmmm_0000
+			Rn = (Rn | Rm);
+		}
+		
+		:AND Rn,Rm is sub=1 & Rn & Rm { #0001_nnnn_mmmm_0001
+			Rn = (Rn & Rm);
+		}
+		
+		:XOR Rn,Rm is sub=2 & Rn & Rm { #0001_nnnn_mmmm_0010
+			Rn = (Rn ^ Rm);
+		}
+		
+		:NOR Rn,Rm is sub=3 & Rn & Rm { #0001_nnnn_mmmm_0011
+			Rn = ~(Rn | Rm);
+		}
+		
+@if MUL_OPT == "1"
+		:MUL Rn,Rm is sub=4 & Rn & Rm { #0001_nnnn_mmmm_0100
+			local prod:8 = sext(Rn:4) * sext(Rm:4);
+			SET_hi_lo(prod);
+		}
+		
+		:MULU Rn,Rm is sub=5 & Rn & Rm { #0001_nnnn_mmmm_0101
+			local prod:8 = zext(Rn:4) * zext(Rm:4);
+			SET_hi_lo(prod);
+		}
+		
+		:MULR Rn,Rm is sub=6 & Rn & Rm { #0001_nnnn_mmmm_0110
+			local prod:8 = sext(Rn:4) * sext(Rm:4);
+			SET_hi_lo(prod);
+			Rn = prod:4;
+		}
+		
+		:MULRU Rn,Rm is sub=7 & Rn & Rm { #0001_nnnn_mmmm_0111
+			local prod:8 = zext(Rn:4) * zext(Rm:4);
+			SET_hi_lo(prod);
+			Rn = prod:4;
+		}
+@endif
+		
+@if DIV_OPT == "1"
+		:DIV Rn,Rm is sub=8 & Rn & Rm { #0001_nnnn_mmmm_1000
+			local q:4 = Rn s/ Rm;
+			local r:4 = Rn s% Rm;
+			lo = q;
+			hi = r;
+		}
+		
+		:DIVU Rn,Rm is sub=9 & Rn & Rm { #0001_nnnn_mmmm_1001
+			local q:4 = Rn / Rm;
+			local r:4 = Rn % Rm;
+			lo = q;
+			hi = r;
+		}
+@endif
+		
+		:SSARB imm0809^"("^Rm^")" is sub=12 & op1011=0 & imm0809 & Rm { #0001_00dd_mmmm_1100
+@if ENDIAN == "little"
+			sar = zext(imm0809 + Rm[0,2] * 8);
+@else
+			sar = 32:4 - zext(imm0809 + Rm[0,2] * 8);
+@endif
+		}
+
+		with :sub=13 {
+			:EXTB Rn is Rm=0b0000 & Rn { #0001_nnnn_0000_1101
+				Rn = sext(Rn:1);
+			}
+			
+			:EXTH Rn is Rm=0b0010 & Rn { #0001_nnnn_0010_1101
+				Rn = sext(Rn:2);
+			}
+			
+			:EXTUB Rn is Rm=0b1000 & Rn { #0001_nnnn_1000_1101
+				Rn = zext(Rn:1);
+			}
+			
+			:EXTUH Rn is Rm=0b1010 & Rn { #0001_nnnn_1010_1101
+				Rn = zext(Rn:2);
+			}
+		}
+		
+		#0001_0000_mmmm_1110
+		:JMP Rm is sub=14 & Rn=0 & Rm
+@if __HAS_VLIW == "1"
+		[ OM = (Rm & 1); globalset(Rm, OM); ]
+@endif
+		{
+			goto [Rm];
+		}
+		
+		#Special case: jumps to $1 and $11 are used to return from functions
+		:JMP Rm is sub=14 & Rn=0 & Rm & (Rm=1 | Rm=11) [ OM = (Rm & 1); ] {
+			return [Rm];
+		}
+
+		with :sub=15 {
+			:JSR Rm is Rn=0 & Rm { #0001_0000_mmmm_1111
+				lp = inst_next;
+				call [Rm];
+			}
+
+@if __HAS_VLIW == "1"
+			:JSRV Rm is Rn=0b1000 & Rm [ OM = 1; ] { #0001_1000_mmmm_1111
+@if VL32_OPT == "1"
+				local dst:4 = Rm & ~3:4;
+@else #VL64_OPT
+				local dst:4 = Rm & ~7:4;
+@endif
+				lp = (inst_next | 1);
+				call [dst];
+			}
+@endif
+		}
+	}
+
+    #----------------#
+    # Major Opcode 2 #
+    #----------------#
+
+	with :major=2 {
+@if BIT_OPT == "1"
+		with :op1111=0 {
+			:BSETM RmMem,imm0810 is sub=0 & RmMem & imm0810 { #0010_0iii_mmmm_0000
+				local bit:1 = (1 << imm0810);
+				*:1 RmMem = (*:1 RmMem | bit);
+			}
+		
+			:BCLRM RmMem,imm0810 is sub=1 & RmMem & imm0810 { #0010_0iii_mmmm_0001
+				local mask:1 = ~(1 << imm0810);
+				*:1 RmMem = (*:1 RmMem & mask);
+			}
+			
+			:BNOTM RmMem,imm0810 is sub=2 & RmMem & imm0810 { #0010_0iii_mmmm_0010
+				local bit:1 = (1 << imm0810);
+				*:1 RmMem = (*:1 RmMem ^ bit);
+			}
+			
+			:BTSTM r0,RmMem,imm0810 is sub=3 & r0 & RmMem & imm0810 { #0010_0iii_mmmm_0011
+				local bit:1 = (1 << imm0810);
+				local mem:1 = *:1 RmMem;
+				r0 = zext(bit & mem);
+			}
+		}
+		
+		:TAS Rn,RmMem is sub=4 & Rn & RmMem { #0010_nnnn_mmmm_0100
+			Rn = zext(*:1 RmMem);
+			*:1 RmMem = 1;
+		}
+@endif
+
+		:SL1AD3 r0,Rn,Rm is sub=6 & r0 & Rn & Rm { #0010_nnnn_mmmm_0110
+			r0 = (Rn << 1) + Rm;
+		}
+		
+		:SL2AD3 r0,Rn,Rm is sub=7 & r0 & Rn & Rm { #0010_nnnn_mmmm_0111
+			r0 = (Rn << 2) + Rm;
+		}
+	
+		:SRL Rn,Rm is sub=12 & Rn & Rm { #0010_nnnn_mmmm_1100
+			Rn = (Rn >> Rm[0,5]);
+		}
+		
+		:SRA Rn,Rm is sub=13 & Rn & Rm { #0010_nnnn_mmmm_1101
+			Rn = (Rn s>> Rm[0,5]);
+		}
+		
+		:SLL Rn,Rm is sub=14 & Rn & Rm { #0010_nnnn_mmmm_1110
+			Rn = (Rn << (Rm & 0x1F));
+		}
+		
+		:FSFT Rn,Rm is sub=15 & Rn & Rm { #0010_nnnn_mmmm_1111
+			local res:8 = (zext(Rn) << 32) | zext(Rm);
+			res = (res << sar[0,6]);
+			Rn = res[32,32];
+		}
+	}
+
+    #----------------#
+    # Major Opcode 3 #
+    #----------------#
+
+@if COP_OPT == "1"
+	with :major=3 {
+		:SWCPI CRn,RmMemInc is sub=0 & CRn & RmMemInc { #0011_nnnn_mmmm_0000
+			local dst:4 = RmMemInc & ~3;
+			*:4 dst = CRn:4;
+			RmMemInc = RmMemInc + 4;
+		}
+		
+		:LWCPI CRn,RmMemInc is sub=1 & CRn & RmMemInc { #0011_nnnn_mmmm_0001
+			#IMPLEMENTATION NOTE
+			#On a coprocessor with registers wider than 32-bits,
+			#the result of the LWCP operation is implementation defined.
+			#
+			#This implementation sets the bottom 32-bits of the target register from
+			#memory while keeping the top 32-bits of the target register untouched.
+			#
+			local src:4 = RmMemInc & ~3;
+			CRn[0,32] = *:4 src;
+			RmMemInc = RmMemInc + 4;
+		}
+		
+		:SMCPI CRn,RmMemInc is sub=2 & CRn & RmMemInc { #0011_nnnn_mmmm_0010
+			local dst:4 = RmMemInc & ~7;
+			*:8 dst = CRn:8;
+			RmMemInc = RmMemInc + 8;
+		}
+		
+		:LMCPI CRn,RmMemInc is sub=3 & CRn & RmMemInc { #0011_nnnn_mmmm_0011
+			local src:4 = RmMemInc & ~7;
+			CRn = *:8 src;
+			RmMemInc = RmMemInc + 8;
+		}
+		
+		:SWCP CRn,RmMem is sub=8 & CRn & RmMem { #0011_nnnn_mmmm_1000
+			local dst:4 = RmMem & ~3;
+			*:4 dst = CRn:4;
+		}
+		
+		:LWCP CRn,RmMem is sub=9 & CRn & RmMem { #0011_nnnn_mmmm_1001
+			#IMPLEMENTATION NOTE: SEE LWCPI
+			local src:4 = RmMem & ~3;
+			CRn[0,32] = *:4 src;
+		}
+		
+		:SMCP CRn,RmMem is sub=10 & CRn & RmMem { #0011_nnnn_mmmm_1010
+			local dst:4 = RmMem & ~7;
+			*:8 dst = CRn:8;
+		}
+		
+		:LMCP CRn,RmMem is sub=11 & CRn & RmMem { #0011_nnnn_mmmm_1011
+			local src:4 = RmMem & ~7;
+			CRn = *:8 src;
+		}
+	}
+@endif
+
+    #----------------#
+    # Major Opcode 4 #
+    #----------------#
+
+	with :major=4 {
+		with :op0707=0 {
+			#0100_nnnn_0iii_ii00 (imm7=iii_ii||00)
+			:ADD3 Rn,sp,imm7 is op0001=0b00 & Rn & imm0207 & sp [ imm7 = imm0207 << 2; ] { 
+				Rn = sp + imm7;
+			}
+			
+			#0100_nnnn_0ddd_dd10 (disp7=ddd_dd||00) 
+			:SW Rn,SpDisp7 is op0001=0b10 & Rn & SpDisp7 {
+				SpDisp7 = Rn;
+			}
+			
+			#0100_nnnn_0ddd_dd11
+			:LW Rn,SpDisp7 is op0001=0b11 & Rn & SpDisp7 {
+				Rn = SpDisp7;
+			}
+			
+		}
+		
+		with :op0707=1 {
+			with :op1111=0 {
+				#0100_0nnn_1ddd_dd10
+				:SW Rn07,TpDisp7Word is op0001=0b10 & Rn07 & TpDisp7Word {
+					TpDisp7Word = Rn07;
+				}
+				
+				#0100_0nnn_1ddd_dd11
+				:LW Rn07,TpDisp7Word is op0001=0b11 & Rn07 & TpDisp7Word {
+					Rn07 = TpDisp7Word;
+				}
+			}
+			
+			#0100_1nnn_1ddd_dddd (disp7=ddd_dddd)
+			:LBU Rn07,TpDisp7Byte is op1111=1 & Rn07 & TpDisp7Byte {
+				Rn07 = zext(TpDisp7Byte);
+			}
+		}
+	}
+
+    #----------------#
+    # Major Opcode 5 #
+    #----------------#
+
+    :MOV Rn,imm0007 is major=5 & Rn & imm0007 {
+        Rn = imm0007:4;
+    }
+
+    #----------------#
+    # Major Opcode 6 #
+    #----------------#
+
+    with :major=6 {
+    	#0110_nnnn_iiii_ii00
+        :ADD Rn,simm0207 is op0001=0b00 & Rn & simm0207 {
+            Rn = Rn + simm0207;
+        }
+        
+        #0110_nnnn_iiii_i001 (imm5=iiii_i)
+		:SLT3 r0,Rn,imm0307 is op0002=0b001 & r0 & Rn & imm0307 {
+			r0 = zext(Rn s< imm0307);
+		}
+		
+		#0110_nnnn_iiii_i010
+		:SRL Rn,imm0307 is op0002=0b010 & Rn & imm0307 {
+			Rn = (Rn >> imm0307);
+		}
+		
+		#0110_nnnn_iiii_i011
+		:SRA Rn,imm0307 is op0002=0b011 & Rn & imm0307 {
+			Rn = (Rn s>> imm0307);
+		}
+		
+		#0110_nnnn_iiii_i101
+		:SLTU3 r0,Rn,imm0307 is op0002=0b101 & r0 & Rn & imm0307 {
+			r0 = zext(Rn < zext(imm0307:1));
+		}
+		
+		#0110_nnnn_iiii_i110
+		:SLL Rn,imm0307 is op0002=0b110 & Rn & imm0307 {
+			Rn = (Rn << imm0307);
+		}
+		
+		#0110_nnnn_iiii_i111
+		:SLL3 r0,Rn,imm0307 is op0002=0b111 & r0 & Rn & imm0307 {
+			r0 = (Rn << imm0307);
+		}
+    }
+
+    #----------------#
+    # Major Opcode 7 #
+    #----------------#
+
+    with :major=7 {
+        with :sub=0b0000 & Rn=0 {
+            define pcodeop DisableInterrupt;
+            :DI is Rm=0 { #0111_0000_0000_0000
+                DisableInterrupt();
+            }
+
+            define pcodeop EnableInterrupt;
+            :EI is Rm=1 { #0111_0000_0001_0000
+                EnableInterrupt();
+            }
+        }
+
+        with :sub=0b0001 & Rn=0 {
+            define pcodeop SynchronizeWithMemory;
+            :SYNCM is Rm=1 { #0111_0000_0001_0001
+                SynchronizeWithMemory();
+            }
+
+@if COP_OPT == "1"
+            define pcodeop SynchronizeWithCoprocessor;
+            :SYNCCP is Rm=2 { #0111_0000_0010_0001
+                SynchronizeWithCoprocessor();
+            }
+@endif
+        }
+
+        with :sub=0b0010 & Rn=0 {
+            :RET is Rm=0b0000 [ OM = (lp & 1); globalset(lp, OM); ] { #0111_0000_0000_0010
+                perform_return(lp);
+            }
+
+            :RETI is Rm=0b0001 [ OM = (epc & 1); globalset(epc, OM); ] { #0111_0000_0001_0010
+            	#TODO: NMI handling etc
+                perform_return(epc);
+            }
+
+            define pcodeop Halt;
+            :HALT is Rm=0b0010 { #0111_0000_0010_0010
+                Halt();
+            }
+
+            define pcodeop BreakException;
+            :BREAK is Rm=0b0011 { #0111_0000_0011_0010
+                BreakException();
+            }
+
+            define pcodeop Sleep;
+            :SLEEP is Rm=0b0110 { #0111_0000_0110_0010
+                Sleep();
+            }
+        }
+
+@if DBG_OPT == "1"
+        with :sub=0b0011 & Rn=0 {
+            :DRET is Rm=0b0001 { #0111_0000_0001_0011
+                perform_return(depc);
+            }
+
+            define pcodeop DebugBreak;
+            :DBREAK is Rm=0b0011 { #0111_0000_0011_0011
+                DebugBreak();
+            }
+        }
+@endif
+
+		#TODO: when is CACHE enabled?
+		#Only if the core has a CACHE option? Do we care?
+        with :sub=0b0100 {
+        	#0111_iiii_mmmm_0100
+        
+            #No clue why, but putting imm0811 in the pattern list results
+            #in a seemingly nonsensical "Constraining currently undefined operand" error
+
+            define pcodeop DataCacheHitWriteback;
+            :CACHE "WB",RmMem is imm0811=0 & RmMem {
+                DataCacheHitWriteback(RmMem);
+            }
+
+            define pcodeop DataCacheIndexWriteback;
+            :CACHE "IDX_WB",RmMem is imm0811=1 & RmMem unimpl
+
+            define pcodeop DataCacheHitWritebackInvalidate;
+            :CACHE "WB_INV",RmMem is imm0811=2 & RmMem {
+                DataCacheHitWritebackInvalidate(RmMem);
+            }
+
+            define pcodeop DataCacheIndexWritebackInvalidate;
+            :CACHE "IDX_WB_INV",RmMem is imm0811=3 & RmMem unimpl
+            
+            define pcodeop DataCacheOperation;
+            :CACHE imm0811,RmMem is imm0811 & RmMem {
+            	DataCacheOperation(imm0811:1, RmMem);
+            }
+        }
+        
+        with :sub=0b0101 {
+        	define pcodeop CachePrefetch;
+        	:PREF imm0811,RmMem is imm0811 & RmMem {
+        		CachePrefetch(imm0811:1, RmMem);
+        	}
+        }
+
+        define pcodeop SystemCall;
+        :SWI imm0405 is sub=0b0110 & op0611=0 & imm0405 { #0111_0000_00ii_0110
+            r0 = SystemCall(r4);
+        }
+	
+#Man-made horrors beyond human comprehension.
+@include "STCLDC.sinc"	
+	}
+
+    #----------------#
+    # Major Opcode 8 #
+    #----------------#
+
+	with :major=8 {
+		#1000_0nnn_0ddd_dddd (disp7 = ddd_dddd)
+		:SB Rn07,TpDisp7Byte is op0707=0 & op1111=0 & Rn07 & TpDisp7Byte {
+			TpDisp7Byte = Rn07:1;
+		}
+		
+		#1000_0nnn_1ddd_ddd0 (disp7 = ddd_ddd||0)
+		:SH Rn07,TpDisp7Half is op0000=0 & op0707=1 & op1111=0 & Rn07 & TpDisp7Half {
+			TpDisp7Half = Rn07:2;
+		}
+		
+		#1000_1nnn_0ddd_dddd
+		:LB Rn07,TpDisp7Byte is op0707=0 & op1111=1 & Rn07 & TpDisp7Byte {
+			Rn07 = sext(TpDisp7Byte);
+		}
+		
+		#1000_1nnn_1ddd_ddd0
+		:LH Rn07,TpDisp7Half is op0000=0 & op0707=1 & op1111=1 & Rn07 & TpDisp7Half {
+			Rn07 = sext(TpDisp7Half);
+		}
+		
+		#1000_1nnn_1ddd_ddd1
+		:LHU Rn07,TpDisp7Half is op0000=1 & op0707=1 & op1111=1 & Rn07 & TpDisp7Half {
+			Rn07 = zext(TpDisp7Half);
+		} 
+	}
+
+    #----------------#
+    # Major Opcode 9 #
+    #----------------#
+
+	:ADD3 Rl,Rn,Rm is major=9 & Rl & Rn & Rm {
+		Rl = Rn + Rm;
+	}
+
+    #-----------------#
+    # Major Opcode 10 #
+    #-----------------#
+
+	with :major=10 {
+		#1010_nnnn_dddd_ddd0 (disp8=dddd_ddd||0)
+		:BEQZ Rn,BxxZTarget is op0000=0 & Rn & BxxZTarget {
+			if (Rn == 0)
+				goto BxxZTarget;
+		}
+		
+		#1010_nnnn_dddd_ddd1
+		:BNEZ Rn,BxxZTarget is op0000=1 & Rn & BxxZTarget {
+			if (Rn != 0)
+				goto BxxZTarget;
+		}
+	}
+
+    #-----------------#
+    # Major Opcode 11 #
+    #-----------------#
+    
+    with :major=11 {
+    	#1011_dddd_dddd_ddd0 (disp12=dddd_dddd_ddd||0) 
+		:BRA Bdisp12Target is op0000=0 & Bdisp12Target {
+			goto Bdisp12Target;
+		}
+		
+		 
+		#1011_dddd_dddd_ddd1
+		:BSR Bdisp12Target is op0000=1 & Bdisp12Target {
+			lp = inst_next;
+			call Bdisp12Target;
+		}
+    }
+
+    #--------------------------#
+    # Major Opcode 12 (32 bit) #
+    #--------------------------#
+
+	#N.B. we cannot use a global major=12 for these instructions
+	#because the "major=12" constraint needs to be grouped with
+	#the rest of first-halfword constraints else ; doesn't work
+	#(maybe there's a way to do it, cba to search for it)
+	
+	#1100_nnnn_mmmm_0000 iiii_iiii_iiii_iiii (imm16=iiii_iiii_iiii_iiii)
+	:ADD3 Rn,Rm,wimm16 is (major=12 & sub=0 & Rn & Rm); wimm16 {
+		Rn = Rm:4 + sext(wimm16:2);
+	}
+  
+  	#1100_nnnn_0000_0001 iiii_iiii_iiii_iiii
+	:MOV Rn,wsimm16 is (major=12 & sub=1 & Rm=0 & Rn); wsimm16 {
+		Rn = sext(wsimm16:2);
+	}
+	
+	#1100_nnnn_0001_0001 iiii_iiii_iiii_iiii
+	:MOVU Rn,wimm16 is major=12 & sub=1 & Rm=1 & Rn; wimm16 {
+		Rn = wimm16;
+	}
+	
+	#1100_nnnn_0010_0001 iiii_iiii_iiii_iiii
+	:MOVH Rn,wimm16 is (major=12 & sub=1 & Rm=2 & Rn); wimm16 {
+		Rn = wimm16:4 << 16;
+	}
+	
+	#1100_nnnn_mmmm_0010 iiii_iiii_iiii_iiii
+	:SLT3 Rn,Rm,wsimm16 is (major=12 & sub=2 & Rn & Rm); wsimm16 {
+		r0 = zext(Rm s< sext(wsimm16:2));
+	}
+	
+	#1100_nnnn_mmmm_0011 iiii_iiii_iiii_iiii
+	:SLTU3 Rn,Rm,wimm16 is (major=12 & sub=3 & Rn & Rm); wimm16 {
+		r0 = zext(Rm < zext(wimm16:2));
+	}
+	
+	#1100_nnnn_mmmm_0100 iiii_iiii_iiii_iiii
+	:OR3 Rn,Rm,wimm16 is (major=12 & sub=4 & Rn & Rm); wimm16 {
+		Rn = Rm | wimm16;
+	}
+	
+	#1100_nnnn_mmmm_0101 iiii_iiii_iiii_iiii
+	:AND3 Rn,Rm,wimm16 is (major=12 & sub=5 & Rn & Rm); wimm16 {
+		Rn = Rm & wimm16;
+	}
+	
+	#1100_nnnn_mmmm_0110 iiii_iiii_iiii_iiii
+	:XOR3 Rn,Rm,wimm16 is (major=12 & sub=6 & Rn & Rm); wimm16 {
+		Rn = Rm ^ wimm16;
+	}
+
+	#1100_nnnn_mmmm_1000 dddd_dddd_dddd_dddd (disp16=dddd_dddd_dddd_dddd)
+	:SB Rn,RmDisp16Byte is (major=12 & sub=8 & Rn) ... & RmDisp16Byte {
+		RmDisp16Byte = Rn:1;
+	}
+	
+	#1100_nnnn_mmmm_1001 dddd_dddd_dddd_dddd
+	:SH Rn,RmDisp16Half is (major=12 & sub=9 & Rn) ... & RmDisp16Half {
+		RmDisp16Half = Rn:2;
+	}
+	
+	#1100_nnnn_mmmm_1010 dddd_dddd_dddd_dddd
+	:SW Rn,RmDisp16Word is (major=12 & sub=10 & Rn) ... & RmDisp16Word {
+		RmDisp16Word = Rn;
+	}
+	
+	#1100_nnnn_mmmm_1011 dddd_dddd_dddd_dddd
+	:LBU Rn,RmDisp16Byte is (major=12 & sub=11 & Rn) ... & RmDisp16Byte {
+		Rn = zext(RmDisp16Byte);
+	}
+	
+	#1100_nnnn_mmmm_1100 dddd_dddd_dddd_dddd
+	:LB Rn,RmDisp16Byte is (major=12 & sub=12 & Rn) ... & RmDisp16Byte {
+		Rn = sext(RmDisp16Byte);
+	}
+	
+	#1100_nnnn_mmmm_1101 dddd_dddd_dddd_dddd
+	:LH Rn,RmDisp16Half is (major=12 & sub=13 & Rn) ... & RmDisp16Half {
+		Rn = sext(RmDisp16Half);
+	}
+	
+	#1100_nnnn_mmmm_1110 dddd_dddd_dddd_dddd
+	:LW Rn,RmDisp16Word is (major=12 & sub=14 & Rn) ... & RmDisp16Word {
+		Rn = RmDisp16Word;
+	}
+	
+	#1100_nnnn_mmmm_1111 dddd_dddd_dddd_dddd
+	:LHU Rn,RmDisp16Half is (major=12 & sub=15 & Rn) ... & RmDisp16Half {
+		Rn = zext(RmDisp16Half);
+	}
+
+    #--------------------------#
+    # Major Opcode 13 (32-bit) #
+    #--------------------------#
+
+	#1101_0nnn_IIII_IIII iiii_iiii_iiii_iiii (imm24=iiii_iiii_iiii_iiii||IIII_IIII) 
+	:MOVU Rn07,imm24 is major=13 & op1111=0 & Rn07 & imm0007; wimm16 [ imm24 = imm0007 | (wimm16 << 8); ] {
+		Rn07 = imm24;
+	}
+
+@if COP_OPT == "1"
+	#TODO: is this correct?
+
+	#1101_1000_cccc_0100 dddd_dddd_dddd_dddd (disp17=dddd_dddd_dddd_dddd||0)
+	:BCPEQ cccc,BCPcondTarget is (sub=4 & cccc) ... & BCPcondTarget {
+		if ((cccc ^ cp_flag[0,4]) == 0)
+			goto BCPcondTarget;
+	}
+
+	#1101_1000_cccc_0101 dddd_dddd_dddd_dddd
+	:BCPNE cccc,BCPcondTarget is (sub=5 & cccc) ... & BCPcondTarget {
+		if ((cccc ^ cp_flag[0,4]) != 0)
+			goto BCPcondTarget;
+	}
+	
+	#1101_1000_cccc_0110 dddd_dddd_dddd_dddd
+	:BCPAT cccc,BCPcondTarget is (sub=6 & cccc) ... & BCPcondTarget {
+		if ((cccc & cp_flag[0,4]) != 0)
+			goto BCPcondTarget;
+	}
+	
+	#1101_1000_cccc_0111 dddd_dddd_dddd_dddd
+	:BCPAF cccc,BCPcondTarget is (sub=7 & cccc) ... & BCPcondTarget {
+		if ((cccc & cp_flag[0,4]) == 0)
+			goto BCPcondTarget;
+	}
+@endif
+	
+	JmpTarget24: target is major=13 & op1111=1 & sub=8 & imm0410; wimm16 [
+		target = (inst_start & 0xF0000000) | (wimm16 << 8) | (imm0410 << 1);
+	] {
+		export *:4 target;
+	}
+	
+	#1101_1TTT_TTTT_1000 tttt_tttt_tttt_tttt (target24=tttt_tttt_tttt_tttt||TTT_TTTT||0)
+	:JMP JmpTarget24 is JmpTarget24 {
+		goto JmpTarget24;		
+	}
+	
+	
+	#1101_1DDD_DDDD_1001 dddd_dddd_dddd_dddd (disp24=dddd_dddd_dddd_dddd||DDD_DDDD||0)
+	:BSR BSRTarget is BSRTarget {
+		lp = inst_next;
+
+		call BSRTarget;
+	}
+
+@if __HAS_VLIW == "1"
+	#BSRV disp24 1101_1DDD_DDDD_1011 dddd_dddd_dddd_dddd (disp24=dddd_dddd_dddd_dddd||DDD_DDDD||0)
+	:BSRV BSRVTarget is BSRVTarget {
+		lp = (inst_next | 1);
+		call BSRVTarget;
+	}
+@endif
+
+    #--------------------------#
+    # Major Opcode 14 (32-bit) #
+    #--------------------------#
+
+	#1110_nnnn_iiii_0000 dddd_dddd_dddd_dddd
+	:BEQI Rn,imm0407,BcondTarget is (sub=0b0000 & Rn & imm0407) ... & BcondTarget {
+		if (Rn == zext(imm0407:1))
+			goto BcondTarget;
+	}
+	
+	#:BEQ Rn,Rm,disp17 1110_nnnn_mmmm_0001 dddd_dddd_dddd_dddd
+	:BEQ Rn,Rm,BcondTarget is (sub=0b0001 & Rn & Rm) ... & BcondTarget {
+		if (Rn == Rm)
+			goto BcondTarget;
+	}
+	
+	#:BNEI Rn,imm4,disp17 1110_nnnn_iiii_0100 dddd_dddd_dddd_dddd
+	:BNEI Rn,imm0407,BcondTarget is (sub=0b0100 & Rn & imm0407) ... & BcondTarget {
+		if (Rn != zext(imm0407:1))
+			goto BcondTarget;
+	}
+	
+	#:BNE Rn,Rm,disp17 1110_nnnn_mmmm_0101 dddd_dddd_dddd_dddd
+	:BNE Rn,Rm,BcondTarget is (sub=0b0101 & Rn & Rm) ... & BcondTarget {
+		if (Rn != Rm)
+			goto BcondTarget;
+	}
+	
+	#:BGEI Rn,imm4,disp17 1110_nnnn_iiii_1000 dddd_dddd_dddd_dddd
+	:BGEI Rn,imm0407,BcondTarget is (sub=0b1000 & Rn & imm0407) ... & BcondTarget {
+		if (Rn s>= imm0407)
+			goto BcondTarget;
+	}
+	
+	:REPEAT Rn,end is major=14 & Rm=0 & sub=9 & Rn; wsimm16 [
+		end = inst_start + (wsimm16 << 1);
+		
+		#Save required info to the target instruction
+		REPEAT_START = inst_start + 4;
+		REPEAT_REMAINING = 2;
+		ELR = 0;
+		globalset(end, REPEAT_START);
+		globalset(end, REPEAT_REMAINING);
+		globalset(end, ELR);
+	] {
+		#rpb = inst_next;
+		#rpe = end & ~1:4; #Clear ELR
+		
+		#Add 1 to RPC. This is compensated by pre-decrementing instead of post-decrementing
+		#when decoding last instruction in block and results in better disassembly.
+		rpc = Rn + 1:4;
+	}
+	
+	
+	:EREPEAT end is major=14 & Rn=0 & Rm=1 & sub=9 ; wsimm16 [
+		end = inst_start + (wsimm16 << 1);
+		
+		#Save required info to the target instruction
+		ELR = 1;
+		REPEAT_START = inst_start + 4;
+		REPEAT_REMAINING = 2;
+		globalset(end, REPEAT_START);
+		globalset(end, REPEAT_REMAINING);
+		globalset(end, ELR);
+	] {
+		rpb = inst_next;
+		rpe = end | 1:4; #Set ELR
+	}
+	
+	#:BLTI Rn,imm4,disp17 1110_nnnn_iiii_1100 dddd_dddd_dddd_dddd
+	:BLTI Rn,imm0407,BcondTarget is (sub=0b1100 & Rn & imm0407) ... & BcondTarget {
+		if (Rn s< imm0407)
+			goto BcondTarget;
+	}
+
+	#1110_nnnn_DDDD_DD10 dddd_dddd_dddd_dddd (abs24=dddd_dddd_dddd_dddd||DDDD_DD||00)
+	:SW Rn,(abs24) is major=14 & op0001=0b10 & Rn & imm0207; wimm16 [ abs24 = (wimm16 << 8) | (imm0207 << 2); ] {
+		*:4 abs24:4 = Rn;
+	}
+	
+	#1110_nnnn_DDDD_DD11 dddd_dddd_dddd_dddd
+	:LW Rn,(abs24) is major=14 & op0001=0b11 & Rn & imm0207; wimm16 [ abs24 = (wimm16 << 8) | (imm0207 << 2); ] {
+		Rn = *:4 abs24:4;
+	}
+
+    #--------------------------#
+    # Major Opcode 15 (32-bit) #
+    #--------------------------#
+    
+@if (DSP_OPT == "1") && (NO_DEFAULT_DSP_INSTR == "0")
+	#There are three variants of the DSP instruction:
+	# DSP  Rn, Rm, code16:  Rn = DSP(Rn, Rm, code16) | Two input, one output registers
+	# DSP0 code24        :  DSP0(code24)             | No input/output register
+	# DSP1 Rn, code20    :  Rn = DSP1(Rn)            | One input/output register
+	#
+	#The problem is that these three instructions share the same encoding.
+	#It's impossible to distinguish them without DSP-specific documentation.
+	#
+	#To reduce disassembly artifacts, this placeholder implementation will
+	#correspond to the DSP0 instruction but separating Rn, Rm and code16 for readability.
+	#
+
+	#1111_nnnn_mmmm_0000 cccc_cccc_cccc_cccc
+	define pcodeop DSPOperation;
+	:DSPx Rn,Rm,wimm16 is major=15 & sub=0 & Rn & Rm; wimm16 {
+		DSPOperation(Rn, Rm, wimm16:2);
+	}
+@endif
+
+@if LDZ_OPT == "1"
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0000
+	:LDZ Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=0 {
+		Rn = lzcount(Rm);
+	}
+@endif
+
+@if AVE_OPT == "1"
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0010
+	:AVE Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=2 {
+		Rn = (Rn + Rm + 1:4) s>> 1;
+	}
+@endif
+
+@if ABS_OPT == "1"
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0011
+	:ABS Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=3 {
+		local res:4 = Rn - Rm;
+		if (res s>= 0:4)
+			goto <wb>;
+		res = -res;
+		
+	<wb>
+		Rn = res;
+	}
+@endif
+
+@if MIN_OPT == "1"
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0100
+	:MIN Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=4 {
+		if (Rn s> Rm)
+			goto <choose_rm>;
+			
+		Rn = Rn;
+		goto <end>;
+		
+	<choose_rm>
+		Rn = Rm;
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0101
+	:MAX Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=5 {
+		if (Rn s< Rm)
+			goto <choose_rm>;
+			
+		Rn = Rn;
+		goto <end>;
+		
+	<choose_rm>
+		Rn = Rm;
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0110
+	:MINU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=6 {
+		if (Rn > Rm)
+			goto <choose_rm>;
+			
+		Rn = Rn;
+		goto <end>;
+		
+	<choose_rm>
+		Rn = Rm;
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_0111
+	:MAXU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=7 {
+		if (Rn < Rm)
+			goto <choose_rm>;
+			
+		Rn = Rn;
+		goto <end>;
+		
+	<choose_rm>
+		Rn = Rm;
+	<end>
+	} 
+@endif
+
+@if SAT_OPT == "1"
+	#N.B. while the MeP Instruction Set manual says that both SADD and SSUB
+	#should check for overflow AND underflow, it is impossible(?) for SADD to
+	#underflow or for SSUB to overflow. Thus, both of these cases are not implemented.
+
+	#1111_nnnn_mmmm_0001 0000_0000_0000_1000
+	:SADD Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=8 {
+		if (scarry(Rn, Rm))
+			goto <overflow>;
+			
+		Rn = Rn + Rm;
+		goto <end>;
+		
+	<overflow>
+		Rn = 0x7FFFFFFF:4;
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_1001
+	:SADDU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=9 {
+		if (carry(Rn, Rm))
+			goto <overflow>;
+
+		Rn = Rn + Rm;
+		goto <end>;
+		
+	<overflow>
+		Rn = 0xFFFFFFFF:4;
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_1010
+	:SSUB Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=10 {
+		if (sborrow(Rn, Rm))
+			goto <undeflow>;
+			
+		Rn = Rn - Rm;
+		goto <end>;
+	<undeflow>
+		Rn = 0x80000000:4; #TODO: Is this OK?
+	<end>
+	}
+	
+	#1111_nnnn_mmmm_0001 0000_0000_0000_1011
+	:SSUBU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=11 {
+		if (Rn < Rm)
+			goto <undeflow>;
+			
+		Rn = Rn - Rm;
+		goto <end>;
+	<undeflow>
+		Rn = 0:4;
+	<end>
+	}
+@endif
+
+@if CLP_OPT == "1"
+	#1111_nnnn_0000_0001 0001_0000_iiii_i000 (imm5=iiii_i)
+	:CLIP Rn,wimm0307 is major=15 & sub=1 & Rm=0 & Rn; wop0815=16 & wop0002=0 & wimm0307 {
+		local upr:4 = (1:4 << (wimm0307 - 1:4)) - 1:4;
+		local lwr:4 = -(1:4 << (wimm0307 - 1:4));
+		
+		if (Rn s> upr)
+			goto <set_upr>;
+			
+		if (Rn s< lwr)
+			goto <set_lwr>;
+		
+		goto <end>;
+
+	<set_lwr>
+		Rn = lwr;
+		goto <end>;
+		
+	<set_upr>
+		Rn = upr;
+	<end>
+	}
+	
+	#Special case: CLIP Rn,0 -> Rn = 0
+	:CLIP Rn," 0x0" is major=15 & sub=1 & Rm=0 & Rn; wop0815=16 & wop0002=0 & wimm0307=0 {
+		Rn = 0:4;
+	}
+	
+	#1111_nnnn_0000_0001 0001_0000_iiii_i001
+	:CLIPU Rn,wimm0307 is major=15 & sub=1 & Rm=0 & Rn; wop0815=16 & wop0002=1 & wimm0307 {
+		if (Rn s<= 0)
+			goto <set_0>;
+
+		local upr:4 = (1:4 << wimm0307) - 1;
+		if (Rn > upr)
+			goto <set_upr>;
+
+		goto <end>;
+	<set_upr>
+		Rn = upr;
+		goto <end>;
+		
+	<set_0>
+		Rn = 0:4;
+	<end>	
+	}
+	
+	#Special case: CLIPU Rn,0 -> Rn = 0
+	:CLIPU Rn," 0x0" is major=15 & sub=1 & Rm=0 & Rn; wop0815=16 & wop0002=1 & wimm0307=0 {
+		Rn = 0:4;
+	}
+	
+@endif
+
+@if MUL_OPT == "1"
+	#1111_nnnn_mmmm_0001 0011_0000_0000_0100
+	:MADD Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=0b0011000000000100 {
+		local old:8 = (zext(hi) << 32) | zext(lo);
+		local add:8 = sext(Rn) * sext(Rm);
+		local new:8 = old + add;
+		SET_hi_lo(new);
+	}
+	
+	#1111_nnnn_mmmm_0001 0011_0000_0000_0101
+	:MADDU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=0b0011000000000101 {
+		local old:8 = (zext(hi) << 32) | zext(lo);
+		local add:8 = zext(Rn) * zext(Rm);
+		local new:8 = old + add;
+		SET_hi_lo(new);
+	}
+	
+	#1111_nnnn_mmmm_0001 0011_0000_0000_0110
+	:MADDR Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=0b0011000000000110 {
+		local old:8 = (zext(hi) << 32) | zext(lo);
+		local add:8 = sext(Rn) * sext(Rm);
+		local new:8 = old + add;
+		SET_hi_lo(new);
+		Rn = new:4;
+	}
+	
+	#1111_nnnn_mmmm_0001 0011_0000_0000_0111
+	:MADDRU Rn,Rm is major=15 & sub=1 & Rn & Rm; wimm16=0b0011000000000111 {
+		local old:8 = (zext(hi) << 32) | zext(lo);
+		local add:8 = zext(Rn) * zext(Rm);
+		local new:8 = old + add;
+		SET_hi_lo(new);
+		Rn = new:4;
+	}
+@endif
+
+@if (UCI_OPT == "1") && (NO_DEFAULT_UCI_INSTR == "0")
+	#1111_nnnn_mmmm_0010 cccc_cccc_cccc_cccc
+	define pcodeop UserCustomInstruction;
+	:UCI Rn,Rm,wimm16 is major=15 & sub=2 & Rn & Rm; wimm16 {
+		Rn = UserCustomInstruction(Rn, Rm, wimm16:2);
+	}
+@endif
+
+	#1111_nnnn_0000_0100 aaaa_aaaa_aaaa_aaaa (abs16=aaaa_aaaa_aaaa_aaaa)
+	define pcodeop StoreControlBusRegister;
+	:STCB Rn, CBusReg is major=15 & sub=4 & op0407=0 & Rn; CBusReg {
+		StoreControlBusRegister(CBusReg, Rn);
+		#Emitting a write to CBusReg breaks the pcodeop disassembly.
+	}
+	
+	#1111_nnnn_0001_0100 aaaa_aaaa_aaaa_aaaa
+	:LDCB Rn, CBusReg is major=15 & sub=4 & op0407=1 & Rn; CBusReg {
+		Rn = CBusReg;
+	}
+
+@if (COP_OPT == "1")
+	#1111_nnnn_mmmm_0101 0000_0000_iiii_iiii (imm8=iiii_iiii)
+	:SBCPA CRn,RmMemInc,wsimm0007 is major=15 & sub=5 & CRn & RmMemInc; wop0815=0 & wsimm0007 {
+		*:1 RmMemInc = CRn:1;
+		RmMemInc = RmMemInc + sext(wsimm0007:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0001_0000_iiii_iii0 (imm8=iiii_iii||0)
+	:SHCPA CRn,RmMemInc,imm8 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=1 & wsimm0107 & wop0001=0 [ imm8 = wsimm0107 << 1; ] {
+		*:2 RmMemInc = CRn:2;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0010_0000_iiii_ii00 (imm8=iiii_ii||00)
+	:SWCPA CRn,RmMemInc,imm8 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=2 & wsimm0207 & wop0002=0 [ imm8 = wsimm0207 << 2; ] {
+		*:4 RmMemInc = CRn:4;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0011_0000_iiii_i000 (imm8=iiii_i||000)
+	:SMCPA CRn,RmMemInc,imm8 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=3 & wsimm0307 & wop0003=0 [ imm8 = wsimm0307 << 3; ] {
+		*:8 RmMemInc = CRn;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0100_0000_iiii_iiii
+	:LBCPA CRn,RmMemInc,wsimm0007 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=4 & wsimm0007 {
+		CRn[0,8] = *:1 RmMemInc;
+		RmMemInc = RmMemInc + sext(wsimm0007:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0101_0000_iiii_iii0
+	:LHCPA CRn,RmMemInc,imm8  is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=5 & wsimm0107 & wop0001=0 [ imm8 = wsimm0107 << 1; ] {
+		CRn[0,16] = *:2 RmMemInc;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0110_0000_iiii_ii00
+	:LWCPA CRn,RmMemInc,imm8 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=6 & wsimm0207 & wop0002=0 [ imm8 = wsimm0207 << 2; ] {
+		CRn[0,32] = *:4 RmMemInc;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+	
+	#1111_nnnn_mmmm_0101 0111_0000_iiii_i000
+	:LMCPA CRn,RmMemInc,imm8 is major=15 & sub=5 & CRn & RmMemInc;
+	wop0811=0 & wop1215=7 & wsimm0307 & wop0003=0 [ imm8 = wsimm0307 << 3; ] {
+		CRn = *:8 RmMemInc;
+		RmMemInc = RmMemInc + sext(imm8:1);
+	}
+
+	#1111_nnnn_mmmm_0101 0000_1000_iiii_iiii
+	#SBCPM0 CRn,(Rm+),imm8
+	
+	#1111_nnnn_mmmm_0101 0001_1000_iiii_iii0
+	#SHCPM0 CRn,(Rm+),imm8.align2
+	
+	#1111_nnnn_mmmm_0101 0010_1000_iiii_ii00
+	#SWCPM0 CRn,(Rm+),imm8.align4
+	
+	#1111_nnnn_mmmm_0101 0011_1000_iiii_i000
+	#SMCPM0 CRn,(Rm+),imm8.align8
+	
+	#1111_nnnn_mmmm_0101 0100_1000_iiii_iiii
+	#LBCPM0 CRn,(Rm+),imm8
+	
+	#1111_nnnn_mmmm_0101 0101_1000_iiii_iii0
+	#LHCPM0 CRn,(Rm+),imm8.align2
+	
+	#1111_nnnn_mmmm_0101 0110_1000_iiii_ii00
+	#LWCPM0 CRn,(Rm+),imm8.align4
+	
+	#1111_nnnn_mmmm_0101 0111_1000_iiii_i000
+	#LMCPM0 CRn,(Rm+),imm8.align8
+	
+	#1111_nnnn_mmmm_0101 0000_1100_iiii_iiii
+	#SBCPM1 CRn,(Rm+),imm8
+	
+	#1111_nnnn_mmmm_0101 0001_1100_iiii_iii0
+	#SHCPM1 CRn,(Rm+),imm8.align2
+	
+	#1111_nnnn_mmmm_0101 0010_1100_iiii_ii00
+	#SWCPM1 CRn,(Rm+),imm8.align4
+	
+	#1111_nnnn_mmmm_0101 0011_1100_iiii_i000
+	#SMCPM1 CRn,(Rm+),imm8.align8
+	
+	#1111_nnnn_mmmm_0101 0100_1100_iiii_iiii
+	#LBCPM1 CRn,(Rm+),imm8
+	
+	#1111_nnnn_mmmm_0101 0101_1100_iiii_iii0
+	#LHCPM1 CRn,(Rm+),imm8.align2
+	
+	#1111_nnnn_mmmm_0101 0110_1100_iiii_ii00
+	#LWCPM1 CRn,(Rm+),imm8.align4
+	
+	#1111_nnnn_mmmm_0101 0111_1100_iiii_i000
+	#LMCPM1 CRn,(Rm+),imm8.align8
+
+@if (NO_DEFAULT_CP_INSTR == "0")
+	define pcodeop CoprocessorFunction;
+	#1111_CCCC_CCCC_0111 cccc_cccc_cccc_cccc (code24=CCCC_CCCC||cccc_cccc_cccc_cccc)
+	:CP code24 is major=15 & sub=7 & imm0411; wimm16 [ code24 = (imm0411 << 16) | wimm16; ] {
+		CoprocessorFunction(code24:4);
+	}
+@endif #NO_DEFAULT_CP_INSTR == 0
+
+	#1111_nnnn_mmmm_0111 1111_0000_0000_0000 
+	:CMOV CRn,Rm is major=15 & sub=7 & CRn & Rm; wop0003=0 & wop0311=0 & wop1215=0xF {
+		CRn[0,32] = Rm;
+	}
+	
+	#1111_nnnn_mmmm_0111 1111_0000_0000_0001
+	:CMOV Rm,CRn is major=15 & sub=7 & CRn & Rm; wop0003=1 & wop0311=0 & wop1215=0xF {
+		Rm = CRn:4;
+	}
+
+	#1111_nnnn_mmmm_0111 1111_0001_0000_0000
+	:CMOVH CRn,Rm is major=15 & sub=7 & CRn & Rm;
+	wop0003=0 & wop0307=0 & wop0811=1 & wop1215=0xF {
+		CRn[32,32] = Rm;
+	}
+	
+	#1111_nnnn_mmmm_0111 1111_0001_0000_0001
+	:CMOVH Rm,CRn is major=15 & sub=7 & CRn & Rm;
+	wop0003=1 & wop0307=0 & wop0811=1 & wop1215=0xF {
+		Rm = CRn(4);
+	}
+	
+@if LARGE_CP_REGNUM == "1"
+	#We need to handle c16-c31, distinguished by N=1
+	
+	#1111_nnnn_mmmm_0111 1111_0000_0000_N000 (CRn=Nnnnn)
+	:CMOV CRnExt,Rm is major=15 & sub=7 & CRnExt & Rm;
+	wop0003=0b1000 & wop0411=0 & wop1215=0xF {
+		CRnExt[0,32] = Rm;
+	}
+	
+	#1111_nnnn_mmmm_0111 1111_0000_0000_N001
+	:CMOV Rm,CRnExt is major=15 & sub=7 & CRnExt & Rm;
+	wop0003=0b1001 & wop0411=0 & wop1215=0xF {
+		Rm = CRnExt:4;
+	}
+	
+	#1111_nnnn_mmmm_0111 1111_0001_0000_N000
+	:CMOVH CRnExt,Rm is major=15 & sub=7 & CRnExt & Rm;
+	wop0003=0b1000 & wop0411=1 & wop1215=0xF {
+		CRnExt[32,32] = Rm;
+	}
+	
+	#1111_nnnn_mmmm_0111 1111_0001_0000_N001
+	:CMOVH Rm,CRnExt is major=15 & sub=7 & CRnExt & Rm;
+	wop0003=0b1001 & wop0411=1 & wop1215=0xF {
+		Rm = CRnExt(4);
+	}
+@endif #LARGE_CP_REGNUM == 0
+
+	#Use pcodeop for these two because they're coprocessor-specific
+	
+	#1111_nnnn_mmmm_0111 1111_0000_0000_NN10 (CCRn=NNnnnn)
+	:CMOVC CCRn,Rm is major=15 & sub=7 & op0811 & Rm; wop0001=2 & wop0203 & wop0311=0 &
+	wop1215=0xF [ CCRn = (wop0203 << 4) | op0811; ] {
+		local src:4 = $(CP_CREG_OFFSET):4 + (zext(CCRn:1) * 4:4);
+		Rm = *[register]:4 src;
+	}
+
+	#1111_nnnn_mmmm_0111 1111_0000_0000_NN11
+	define pcodeop WriteCPConfigRegister;
+	:CMOVC Rm,CCRn is major=15 & sub=7 & op0811 & Rm; wop0001=3 & wop0203 & wop0311=0 &
+	wop1215=0xF [ CCRn = (wop0203 << 4) | op0811; ] {
+		local dst:4 = $(CP_CREG_OFFSET):4 + (zext(CCRn:1) * 4:4);
+		WriteCPConfigRegister(*[register]:4 dst, Rm);
+	}
+
+	#1111_nnnn_mmmm_1100 dddd_dddd_dddd_dddd
+	:SWCP CRn,RmDisp16 is (major=15 & sub=12 & CRn) ... & RmDisp16 {
+		local dst:4 = RmDisp16 & ~3;
+		*:4 dst = CRn:4;
+	}
+	
+	#1111_nnnn_mmmm_1101 dddd_dddd_dddd_dddd
+	:LWCP CRn,RmDisp16 is (major=15 & sub=13 & CRn) ... & RmDisp16 {
+		#IMPLEMENTATION NOTE: SEE LWCPI
+		local src:4 = RmDisp16 & ~3;
+		CRn[0,32] = *:4 src;
+	}
+	
+	#1111_nnnn_mmmm_1110 dddd_dddd_dddd_dddd
+	:SMCP CRn,RmDisp16 is (major=15 & sub=14 & CRn) ... & RmDisp16 {
+		local dst:4 = RmDisp16 & ~7;
+		*:8 dst = CRn;
+	}
+	
+	#1111_nnnn_mmmm_1111 dddd_dddd_dddd_dddd
+	:LMCP CRn,RmDisp16 is (major=15 & sub=15 & CRn) ... & RmDisp16 {
+		local src:4 = RmDisp16 & ~7;
+		CRn = *:8 src;
+	}
+@endif #COP_OPT == 1
+
+} #with :OM=0

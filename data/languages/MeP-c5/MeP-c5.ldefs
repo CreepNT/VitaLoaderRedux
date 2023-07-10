@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- See Relax specification: Ghidra/Framework/SoftwareModeling/data/languages/language_definitions.rxg -->
+
+<language_definitions>
+   <language processor="MeP-c5"
+            endian="little"
+            size="32"
+            variant="CMeP"
+            version="0.1"
+            slafile="CMeP.sla"
+            processorspec="MeP-c5.pspec"
+            id="MeP-c5:LE:32:CMeP">
+    	<description>Toshiba MeP-c5 - CMeP implementation</description>
+    	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
+	</language>
+	
+	<language processor="MeP-c5"
+            endian="little"
+            size="32"
+            variant="Venezia"
+            version="0.1"
+            slafile="Venezia.sla"
+            processorspec="MeP-c5.pspec"
+            id="MeP-c5:LE:32:VNZ">
+    	<description>Toshiba MeP-c5 - Venezia implementation (IVC2 coprocessor)</description>
+    	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
+	</language>
+</language_definitions>

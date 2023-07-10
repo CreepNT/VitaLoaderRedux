@@ -1,0 +1,120 @@
+
+# VLIW/Coprocessor options
+
+@ifndef VL32_OPT
+@define VL32_OPT 0
+@endif
+
+@ifndef VL64_OPT
+@define VL64_OPT 0
+@endif
+
+@if VL32_OPT == "1"
+@define __HAS_VLIW 1
+@define __VLIW_ALIGN 3
+@elif VL64_OPT == "1"
+@define __HAS_VLIW 1
+@define __VLIW_ALIGN 7
+@else
+@define __HAS_VLIW 0
+@endif
+
+@ifndef COP_OPT
+@if (VL32_OPT == "0") && (VL64_OPT == "0")
+@define COP_OPT 0
+@else
+@define COP_OPT 1
+@endif
+@endif
+
+@ifndef LARGE_CP_REGNUM
+@define LARGE_CP_REGNUM 0
+@endif
+
+@ifndef NO_DEFAULT_CP_INSTR
+@define NO_DEFAULT_CP_INSTR 0
+@endif
+
+
+
+# Instruction options
+
+@ifndef MUL_OPT
+@define MUL_OPT 0
+@endif
+
+@ifndef DIV_OPT
+@define DIV_OPT 0
+@endif
+
+@ifndef BIT_OPT
+@define BIT_OPT 0
+@endif
+
+@ifndef LDZ_OPT
+@define LDZ_OPT 0
+@endif
+
+@ifndef ABS_OPT
+@define ABS_OPT 0
+@endif
+
+@ifndef AVE_OPT
+@define AVE_OPT 0
+@endif
+
+@ifndef MIN_OPT
+@define MIN_OPT 0
+@endif
+
+@ifndef CLP_OPT
+@define CLP_OPT 0
+@endif
+
+@ifndef SAT_OPT
+@define SAT_OPT 0
+@endif
+
+@ifndef DBG_OPT
+@define DBG_OPT 0
+@endif
+
+	#Useless?
+@ifndef PTO_OPT
+@define PTO_OPT 0
+@endif
+
+	#Useless?
+@ifndef HWE_OPT
+@define HWE_OPT 0
+@endif
+
+#User Custom Instruction option
+
+@ifndef UCI_OPT
+@define UCI_OPT 0
+@endif
+
+@ifndef NO_DEFAULT_UCI_INSTR
+@define NO_DEFAULT_UCI_INSTR 0
+@endif
+
+
+
+#Digital Signal Processor option
+
+@ifndef DSP_OPT
+@define DSP_OPT 0
+@endif
+
+@ifndef NO_DEFAULT_DSP_INSTR
+@define NO_DEFAULT_DSP_INSTR 0
+@endif
+
+
+
+#Timer
+
+@ifndef TIMER_CHANNELS
+@define TIMER_CHANNELS 1
+@endif

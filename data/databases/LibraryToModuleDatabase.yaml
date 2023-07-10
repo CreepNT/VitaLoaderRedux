@@ -1,0 +1,1107 @@
+#########
+# NSKBL #
+#########
+
+nskbl.bin:
+   - SceKblForKernel
+
+##############
+# NS modules #
+##############
+
+acmgr.skprx:
+   - SceSblACMgr
+   - SceSblACMgrForDriver
+   - SceSblACMgrForKernel
+
+applier.skprx:
+   - SceSblApplierForDriver
+
+appmgr.skprx:
+   - SceAppMgr
+   - SceAppMgrForDriver
+   - SceSharedFb
+   - SceSharedFbForDriver
+
+audio.skprx:
+   - SceAudio
+   - SceAudioForDriver
+
+audioin.skprx:
+   - SceAudioIn
+   - SceAudioInForDriver
+
+authmgr.skprx:
+   - SceSblAuthMgrForDriver
+   - SceSblAuthMgrForKernel
+
+avcodec.skprx:
+   - SceAvcodec
+   - SceAvcodecForDriver
+
+#In old firmwares: av_config.skprx
+avconfig.skprx:
+   - SceAVConfig
+   - SceAVConfigForDriver
+
+bbmc.skprx:
+   - SceBbmc
+   - SceBbmcForDriver
+
+bootimage.skprx:
+   - SceKernelBootimage
+
+#BSOD exports only one function
+#The rest is exported by deci4p_userp.skprx
+#bsod.skprx:
+#   - SceDeci4pUserp
+
+bt.skprx:
+   - SceBt
+   - SceBtForDriver
+
+buserror.skprx:
+   - SceBusErrorForKernel
+
+camera.skprx:
+   - SceCamera
+   - SceCameraForDriver
+
+clockgen.skprx:
+   - SceClockgenForDriver
+
+#Or codec_cx.skprx
+codec.skprx:
+   - SceCodec
+   - SceCodecForDriver
+
+compat.skprx:
+   - SceCompat
+   - SceCompatForDriver
+   - SceCompatForVsh
+
+coredump.skprx:
+   - SceCoredump
+   - SceCoredumpNounlink
+   - SceCoredumpForDriver
+
+ctrl.skprx:
+   - SceCtrl
+   - SceCtrlForDriver
+
+cui_updater.skprx:
+   - SceCuiUpdater
+
+dbgsdio.skprx:
+   - SceDbgSdioForDriver
+
+dbgusb.skprx:
+   - SceDbgUsbForDriver
+
+deci4p_cpup.skprx:
+   - SceDeci4pCpupForDriver
+
+deci4p_dbgp.skprx:
+   - SceDeci4pDbgp
+   - SceDeci4pDbgpForDriver
+
+deci4p_dfmgr.skprx:
+   - SceDeci4pDfMgrForDebugger
+
+deci4p_dtracep.skprx:
+   - SceDTrace
+
+deci4p_loadp.skprx:
+   - SceDeci4pLoadp
+
+deci4p_sdbgp.skprx:
+   - SceDeci4pSdbgpTest
+   - SceDeci4pSdbgpForKernel
+
+deci4p_deci2p.skprx:
+   - SceDeci2pForDriver
+
+deci4p_sdfmgr.skprx:
+   - SceDeci4pSDfMgrForKernel
+
+deci4p_userp.skprx:
+   - SceDeci4pUserp
+
+diagbridge.skprx:
+   - SceDiagBridge
+
+display.skprx:
+   - SceDisplay
+   - SceDisplayForDriver
+
+dmacmgr.skprx:
+   - SceDmacmgr
+   - SceDmacmgrForDriver
+
+error.skprx:
+   - SceError
+   - SceErrorForDriver
+
+excpmgr.skprx:
+   - SceExcpmgrForKernel
+
+fios2.skprx:
+   - SceFios2Kernel
+   - SceFios2KernelForDriver
+   - SceFios2Kernel02
+
+first_image_writer.skprx:
+   - SceSblFirstImageWriter
+   - SceSblFirstImageWriterForDriver
+
+#Moved to post_ss_mgr.skprx
+#fwloader.skprx:
+#   - SceSblFwLoaderForDriver
+
+gcauthmgr.skprx:
+   - SceSblGcAuthMgr
+   - SceSblGcAuthMgrSclkForDriver
+   - SceSblGcAuthMgrPkgForDriver
+   - SceSblGcAuthMgrDrmBBForDriver
+   - SceSblGcAuthMgrPcactForDriver
+   - SceSblGcAuthMgrGcAuthForDriver
+   - SceSblGcAuthMgrPsmactForDriver
+   - SceSblGcAuthMgrAdhocBBForDriver
+   - SceSblGcAuthMgrMlnpsnlForDriver
+   - SceSblGcAuthMgrMsSaveBBForDriver
+
+gps.skprx:
+   - SceGps
+   - SceGpsForDriver
+
+gpu_es1.skprx:
+   - SceGpuEs1ForDriver
+   - SceGpuEs1ForUser
+
+gpu_es2.skprx:
+   - SceGpuEs2ForDriver
+   - SceGpuEs2ForUser
+
+gpu_es3.skprx:
+   - SceGpuEs3ForDriver
+   - SceGpuEs3ForUser
+
+gpu_es4.skprx:
+   - SceGpuEs4ForDriver
+   - SceGpuEs4ForUser
+
+hdmi.skprx:
+   - SceHdmiForDriver
+
+hid.skprx:
+   - SceHid
+   - SceHidForDriver
+
+hpremote.skprx:
+   - SceHpremoteForDriver
+
+idstorage.skprx:
+   - SceIdStorage
+   - SceIdStorageForDriver
+
+intrmgr.skprx:
+   - SceIntrmgrForDriver
+   - SceIntrmgrForKernel
+
+iofilemgr.skprx:
+   - SceIofilemgr
+   - SceIofilemgrForDriver
+
+krm.skprx:
+   - SceKrm
+
+lcd.skprx:
+   - SceLcdForDriver
+
+led.skprx:
+   - SceLedForDriver
+
+lowio.skprx:
+   - SceCdramForDriver
+   - SceCsiForDriver
+   - SceDsiForDriver
+   - SceGrabForDriver
+   - SceGpioForDriver
+   - SceI2cForDriver
+   - SceIftuForDriver
+   - ScePervasiveForDriver
+   - ScePwmForDriver
+      
+magicgate.skprx:
+   - SceMagicGateForDriver
+
+marlin_hci.skprx:
+   - SceMarlinHci
+   - SceMarlinHciForDriver
+
+mgkeymgr.skprx:
+   - SceSblMgKeyMgrForDriver
+
+mgvideo.skprx:
+   - SceMgVideo
+   - SceMgVideoForMiniApp
+
+modulemgr.skprx:
+   - SceModulemgr
+   - SceModulemgrForDriver
+   - SceModulemgrForKernel
+   - SceBacktrace
+   - SceBacktraceForDriver
+
+motion.skprx:
+   - SceMotionDev
+   - SceMotionDevForDriver
+
+msif.skprx:
+   - SceMsifForDriver
+
+mtpif.skprx:
+   - SceMtpIf
+   - SceMtpIfForDriver
+
+net_ps.skprx:
+   - SceNetPsForDriver
+   - SceNetPsForSyscalls
+
+ngs.skprx:
+   - SceNgsInternal
+   - SceNgsForDriver
+
+npdrm.skprx:
+   - SceNpDrm
+   - SceNpDrmForDriver
+   - SceNpDrmPackage
+   - ScePsmDrm
+   - ScePsmDrmForDriver
+
+oled.skprx:
+   - SceOledForDriver
+
+pfsmgr.skprx:
+   - ScePfsMgrForKernel
+   - ScePfsFacadeForKernel
+
+post_ss_mgr.skprx:
+   - SceSblPostSsMgrForDriver
+   - SceZlibForDriver
+   - SceSblFwLoaderForDriver
+   - SceSblPmMgr
+   - SceSblPmMgr
+   - SceSblRtcMgr
+   - SceSblLicMgr
+   - SceSblUtMgr
+   - SceSblSpsfoMgr
+
+power.skprx:
+   - ScePower
+   - ScePowerForDriver
+   - SceLedForDriver
+
+processmgr.skprx:
+   - SceProcessmgr
+   - SceProcessmgrForDriver
+   - SceProcessmgrForKernel
+
+regmgr.skprx:
+   - SceRegMgr
+   - SceRegMgrForDebugger
+   - SceRegMgrForDriver
+   - SceRegMgrForGame
+   - SceRegMgrForSDK
+   - SceRegMgrForTool
+   - SceRegMgrService
+   - SceRegMgrServiceForDriver
+
+rtc.skprx:
+   - SceRtc
+   - SceRtcForDriver
+
+samantha.skprx:
+   - SceSamanthaForDriver
+
+sdbgsdio.skprx:
+   - SceSDbgSdioForKernel
+
+sdif.skprx:
+   - SceSdifForDriver
+
+sm_comm.skprx:
+   - SceSblSsSmComm
+   - SceSblSsSmCommForKernel
+
+smsc_proxy.skprx:
+   - SceSblSmSchedProxyForKernel
+
+ss_mgr.skprx:
+   - SceSblSsMgr
+   - SceSblSsMgrForDriver
+   - SceSblSsMgrForKernel
+   - SceSblAimgr
+   - SceSblDmac5Mgr
+   - SceSblQafMgr
+   - SceSblRng
+
+ssproxy.skprx:
+   - SceSSProxyForKernel
+
+stdio.skprx:
+   - SceStdio
+   - SceStdioForDriver
+
+sublcd.skprx:
+   - SceSublcdForDriver
+
+syscon.skprx:
+   - SceSysconForDriver
+
+syslibtrace.skprx:
+   - SceNidsymtblForDriver
+   - SceSysLibTrace
+   - SceSyslibtraceForKernel
+
+sysmem.skprx:
+   - SceSysmem
+   - SceSysmemForKernel
+   - SceSysmemForDriver
+   - SceSysmemForDebugger
+   - SceDebugForDriver
+   - SceDebugForKernel
+   - SceDipsw
+   - SceDipswForDriver
+   - SceUartForKernel
+   - SceCpu
+   - SceCpuForKernel
+   - SceCpuForDriver
+   - SceSysclibForKernel
+   - SceSysclibForDriver
+   - SceSysrootForKernel
+   - SceSysrootForDriver
+   - SceKernelUtilsForDriver
+#Moved to ss_mgr.skprx in 1.80.
+#   - SceZlibForDriver
+   - SceKernelSuspendForDriver
+   - SceQafMgrForDriver
+   - ScePmMgrForDriver
+   - SceSblAIMgrForDriver
+   - SceProcEventForDriver
+   - SceDebugLed
+   - SceDebugLedForDriver
+   - SceDebugForKernel
+
+sysmodule.skprx:
+   - SceSysmodule
+
+systimer.skprx:
+   - SceSystimerForDriver
+
+threadmgr.skprx:
+   - SceThreadmgr
+   - SceThreadmgrCoredumpTime
+   - SceThreadmgrForDriver
+   - SceThreadmgrForKernel
+
+touch.skprx:
+   - SceTouch
+   - SceTouchForDriver
+
+udcd.skprx:
+   - SceUdcd
+   - SceUdcdForDriver
+
+ulobjmgr.skprx:
+   - SceUlobjMgr
+   - SceUlobjMgrForDriver
+
+umass.skprx:
+   - SceUsbMassForDriver
+
+update_mgr.skprx:
+   - SceSblUpdateMgrForDriver
+   - SceSblUpdateMgrForKernel
+   - SceSblSsUpdateMgr
+   - SceSblSsUpdateMgrAdditional
+
+usbaudio.skprx:
+   - SceUsbAudioIn
+   - SceUsbAudioForDriver
+
+usbd.skprx:
+   - SceUsbdForDriver
+   - SceUsbdForUser
+
+usbmtp.skprx:
+   - SceUsbMtpForDriver
+
+usbserial.skprx:
+   - SceUsbSerial
+   - SceUsbSerialForDriver
+
+usbserv.skprx:
+   - SceUsbServ
+   - SceUsbServForDriver
+
+usbstor.skprx:
+   - SceUsbstorForDriver
+   - SceUsbstor
+
+usbstorvstor.skprx:
+   - SceUsbstorVStor
+   - SceUsbstorVStorForDriver
+
+usb_ether_rtl.skprx:
+   - SceUsbEtherRtlForDriver
+
+usb_ether_smsc.skprx:
+   - SceUsbEtherSmscForDriver
+
+vnz_wrapper.skprx:
+   - SceCodecEngineWrapper
+   - SceCodecEngineWrapperForDebugger
+   - SceCodecEngineWrapperForDriver
+   - SceVeneziaWrapperForDriver
+
+vshbridge.skprx:
+   - SceDrmBridge
+   - SceVshBridge
+   - SceVshBridgeAdditional
+
+wlanbt.skprx:
+   - SceWlan
+   - SceWlanBtForDriver
+
+wlanbt_robin.skprx:
+   - SceWlanBtRobinForDriver
+
+  # -- User modules -- #
+
+#####
+# os0:us/
+#####
+avcodec_us.suprx:
+   - SceAudiodecUser
+   - SceAudioencUser
+   - SceJpegUser
+   - SceJpegEncUser
+   - SceVideodecUser
+   - SceVideoencUser
+   - SceVideodecAsyncUser
+   - SceVideodecRecoveryPointUser
+   - SceVideodecLowDelayUser
+   - SceCodecEngineUser
+
+driver_us.suprx:
+   - SceRtcUser
+   - SceDisplayUser
+   - SceMotion
+   - SceAppMgrUser
+   - SceErrorUser
+   - SceFios2User
+   - SceDrmBridgeUser
+
+libgpu_es4.suprx:
+   - SceGpuEs4User
+   - SceGpuEs4UserForVsh
+
+libgxm_es4.suprx:
+   - SceGxm
+   - SceGxmInternal
+   - SceGxmInternalForGles
+   - SceGxmInternalForReplay
+   - SceGxmInternalForTest
+   - SceGxmInternalForVsh
+
+libkernel.suprx:
+   - SceLibKernel
+   - SceLibRng
+   - SceLibGcc
+   - SceLibSsp
+   - SceRtabi
+   - SceKernelForVM
+   - SceKernelForMono
+
+#####
+# vs0:data/external/webcode/
+#####
+jx_web_filtering.suprx:
+   - SceWebFiltering
+   - WebPlugin
+
+ScePsp2Compat.suprx:
+   - ScePsp2Compat
+
+SceWebKitModule.suprx:
+   - SceWebKit
+
+vita_jsextobj.suprx:
+   - SceLibVitaJSExtObj
+
+#####
+# vs0:sys/external/
+#####
+activity_db.suprx:
+   - SceActivityDb
+
+adhoc_matching.suprx:
+   - SceNetAdhocMatching
+
+apputil.suprx:
+   - SceAppUtil
+   - SceAppUtilAddcontForce
+   - SceAppUtilAppEventUserDefined
+   - SceAppUtilBook
+   - SceAppUtilCache
+   - SceAppUtilDevice
+   - SceAppUtilLaunchApp
+   - SceAppUtilNpSignin
+   - SceAppUtilPsm
+   - SceAppUtilUmass
+   - SceAppUtilWebBrowserCBLimited
+
+apputil_ext.suprx:
+   - SceAppUtilExt
+   - SceAppUtilExtMarlinIptv
+   - SceAppUtilExtPlayReady
+   - SceAppUtilExtPsNow
+
+audiocodec.suprx:
+   - SceAudiocodec
+
+avcdec_for_player.suprx:
+   - SceAvcdecForPlayer
+
+bgapputil.suprx:
+   - SceBgAppUtil
+
+bXCe.suprx:
+   - ScebXCe
+
+common_gui_dialog.suprx:
+   - SceCommonGuiDialog
+
+dbrecovery_utility.suprx:
+   - SceDbrecoveryUtility
+
+dbutil.suprx:
+   - SceDbutil
+
+incoming_dialog.suprx:
+   - SceIncomingDialog
+
+ini_file_processor.suprx:
+   - SceIniFileProcessor
+
+libatrac.suprx:
+   - SceAtrac
+
+libc.suprx:
+   - SceLibc
+   - SceLibm
+   - SceLibstdcxx
+
+libcdlg.suprx:
+   - SceCommonDialog
+   - SceNpWebApiCommonDialog
+
+libcdlg_main.suprx:
+   - SceCommonDialogMain
+
+libclipboard.suprx:
+   - SceClipboard
+
+libcodecengine_perf.suprx:
+   - SceCodecEnginePerf
+
+libdbg.suprx:
+   - SceDbg
+
+libhttp.suprx:
+   - SceHttp
+
+libfiber.suprx:
+   - SceFiber
+   - SceUlobjDbg
+
+libfios2.suprx:
+   - SceFios2
+
+libg729.suprx:
+   - SceG729
+
+libgameupdate.suprx:
+   - SceGameUpdate
+
+libhandwriting.suprx:
+   - SceHandwriting
+
+libhttp.suprx:
+   - SceHttp
+
+libime.suprx:
+   - SceIme
+   - SceImeVsh
+
+libipmi_nongame.suprx:
+   - SceIpmiNonGameApp
+
+liblocation.suprx:
+   - SceLibLocation
+
+liblocation_extension.suprx:
+   - SCeLibLocationExtension
+
+liblocation_factory.suprx:
+   - SceLibLocationFactory
+
+liblocation_internal.suprx:
+   - SceLibLocationInternal
+
+libmln.suprx:
+   - SceMarlin
+
+libmlnapplib.suprx:
+   - mlnapplib
+
+libmlndownloader.suprx:
+   - mlndl
+
+libnaac.suprx:
+   - SceAacenc
+   - SceAacencInternal
+
+libnet.suprx:
+   - SceNet
+   - SceNetInternal
+
+libnetctl.suprx:
+   - SceNetCtl
+
+libngs.suprx:
+   - SceNgs
+
+libpaf.suprx:
+   - ScePafAutoTestTty
+   - ScePafCommon
+   - ScePafGraphics
+   - ScePafLowlayer
+   - ScePafMisc
+   - ScePafResource
+   - ScePafStdc
+   - ScePafThread
+   - ScePafToplevel
+   - ScePafWidget
+
+libpaf_web_map_view.suprx:
+   - ScePafWebMapView
+
+libperf.suprx:
+   - ScePerf
+   - ScePerfInternal
+
+libpgf.suprx:
+   - ScePgf
+
+libpvf.suprx:
+   - ScePvf
+
+#There probably exists es1-es3 too
+librazorcapture_es4.suprx:
+   - SceRazorCapture
+
+librazorhud_es4.suprx:
+   - SceRazorHud
+   - SceRazorHudInternalForReplay
+
+librudp.suprx:
+   - SceLibRudp
+
+libsas.suprx:
+   - SceSas
+
+libsceavplayer.suprx:
+   - SceAvPlayer
+
+libSceBeisobmf.suprx:
+   - SceBeisobmf
+
+libSceBemp2sys.suprx:
+   - SceBemp2sys
+
+libSceCompanionUtil.suprx:
+   - SceCompanionUtil
+
+libSceDtcpIp.suprx:
+   - SceDtcpIp
+
+libSceFt2.suprx:
+   - SceFt2
+
+libscejpegarm.suprx:
+   - SceJpegArm
+
+libscejpegencarm.suprx:
+   - SceJpegEncArm
+
+libSceJson.suprx:
+   - SceJson
+
+libscemp4.suprx:
+   - SceMp4
+
+libSceMp4Rec.suprx:
+   - SceLibMp4Recorder
+
+libSceMusicExport.suprx:
+   - SceMusicExport
+
+libSceNearDialogUtil.suprx:
+   - SceNearDialogUtil
+
+libSceNearUtil.suprx:
+   - SceNearUtil
+
+libScePhotoExport.suprx:
+   - ScePhotoExport
+
+libScePromoterUtil.suprx:
+   - ScePromoterUtil
+
+libSceScreenShot.suprx:
+   - SceScreenShot
+
+libSceShutterSound.suprx:
+   - SceShutterSound
+
+libSceSqlite.suprx:
+   - SceSqlite
+
+libSceTelephonyUtil.suprx:
+   - SceTelephonyUtil
+
+libSceTeleportClient.suprx:
+   - SceTeleportClient
+
+libSceTeleportServer.suprx:
+   - SceTeleportServer
+
+libSceVideoExport.suprx:
+   - SceVideoExport
+   - SceVideoExportEmpr
+   - SceVideoExportData
+
+libSceVideoSearchEmpr.suprx:
+   - SceVideoSearchEmpr
+
+libSceXml.suprx:
+   - SceLibXml
+
+libshellsvc.suprx:
+   - SceIpmi
+   - SceShellSvc
+   - SceShellUtil
+   - SceShellUtilLaunchApp
+   - SceShellUtilUketorne
+   - SceSvcCtrl
+
+libssl.suprx:
+   - SceSsl
+   - SceSslInternal
+
+libsulpha.suprx:
+   - SceSulpha
+
+libsystemgesture.suprx:
+   - SceSystemGesture
+
+libult.suprx:
+   - SceUlt
+
+libvoice.suprx:
+   - SceVoice
+
+libvoiceqos.suprx:
+   - SceVoiceQoS
+
+livearea_util.suprx:
+   - SceLiveAreaUtil
+   - SceLiveAreaUtilBgApp
+
+mail_api_for_local_libc.suprx:
+   - mail_api_for_local_libc
+
+near_profile.suprx:
+   - SceNearProfile
+
+notification_util.suprx:
+   - SceNotificationUtil
+   - SceNotificationUtilBgApp
+   - SceNotificationUtilProcess
+
+np_activity.suprx:
+   - SceNpActivityNet
+
+np_activity_sdk.suprx:
+   - SceNpActivity
+
+np_basic.suprx:
+   - SceNpBasic
+
+np_commerce2.suprx:
+   - SceNpCommerce2
+
+np_common.suprx:
+   - SceNpCommon
+
+np_common_ps4.suprx:
+   - SceNpCommonPs4
+
+np_friend_privacylevel.suprx:
+   - SceNpFriendPrivacyLevel
+
+np_kdc.suprx:
+   - SceNpKdc
+
+np_manager.suprx:
+   - SceNpManager
+   - SceNpManagerOAuth
+   - SceNpManagerSP
+   - SceNpManagerTicket
+
+np_matching2.suprx:
+   - SceNpMatching2
+
+np_message.suprx:
+   - SceNpMessage
+
+np_message_contacts.suprx:
+   - SceNpMessageContacts
+
+np_message_dialog_impl.suprx:
+   - SceNpMessageDualogPlugin
+
+np_party.suprx:
+   - SceNpPartyGameUtil
+
+np_ranking.suprx:
+   - SceNpScore
+
+np_signaling.suprx:
+   - SceNpSignaling
+
+np_sns_facebook.suprx:
+   - SceNpSnsFacebook
+
+np_trophy.suprx:
+   - SceNpTrophy
+
+np_tus.suprx:
+   - SceNpTus
+
+np_utility.suprx:
+   - SceNpUtility
+   - SceNpUtilityAvatarN
+
+np_webapi.suprx:
+   - SceNpWebApi
+
+party_member_list.suprx:
+   - ScePartyMemberListPlugin
+
+psmkdc.suprx:
+   - SceDrmPsmKdc
+
+pspnet_adhoc.suprx:
+   - ScePspnetAdhoc
+
+sqlite.suprx:
+   - SceSqliteVsh
+
+trigger_util.suprx:
+   - SceTriggerUtil
+
+web_ui_plugin.suprx:
+   - SceWebUIPlugin
+
+#####
+# vs0:vsh/common/
+#####
+app_settings.suprx:
+   - SceAppSettings
+
+av_content_handler.suprx:
+   - SceHostAvch
+
+backup_restore.suprx:
+   - SceBackupRestore
+
+content_operation.suprx:
+   - SceContentOperation
+
+dbrecovery_plugin.suprx:
+   - SceDbRecovery
+
+dbsetup.suprx:
+   - SceDbSetup
+
+libBEAVCorePlayer.suprx:
+   - SceBEAVCorePlayer
+
+libFflMp4.suprx:
+   - SceLibFflMp4
+
+libical.suprx:
+   - libical
+
+libicalss.suprx:
+   - libicalss
+
+libmarlin.suprx:
+   - SceMarlin
+
+libmarlin_pb.suprx:
+   - SceMarlinPb
+
+#Exported by vs0:sys/external/libmlndownloader.suprx
+#libmarlindownloader.suprx:
+#   - mlndl
+
+libmtp.suprx:
+   - SceLibMtp
+
+libmtphttp.suprx:
+   - SceLibMtpHttp
+
+libmtphttp_wrapper.suprx:
+   - SceLibMtpHttpWrapper
+
+libSenvuabsFFsdk.suprx:
+   - SceLibFllVuMp4
+
+libvideoprofiler.suprx:
+   - SceVideoProfiler
+
+mail_api_for_local.suprx:
+   - mail_api_for_local
+
+mtp_client.suprx:
+   - SceMtpClient
+
+mtpr3.suprx:
+   - SceMtpr3
+
+np_grief_report.suprx:
+   - SceNpGriefReport
+
+#####
+# vs0:vsh/common/mms/
+#####
+AACPromoter.suprx:
+   - SceAACPromoter
+
+bmp_promoter.suprx:
+   - SceBmpPromoter
+
+gif_promoter.suprx:
+   - SceGifPromoter
+
+jpeg_promoter.suprx:
+   - SceJpegPromoter
+
+meta_gen.suprx:
+   - SceMetaGen
+
+Mp3Promoter.suprx:
+   - SceMp3Promoter
+
+MsvPromoter.suprx:
+   - SceMsvPromoter
+
+png_promoter.suprx:
+   - ScePngPromoter
+
+RiffPromoter.suprx:
+   - SceRiffPromoter
+
+SensMe.suprx:
+   - SceSenseMe
+
+tiff_promoter.suprx:
+   - SceTiffPromoter
+
+#####
+# vs0:vsh/shell/
+#####
+liblocation_dolce_provider.suprx:
+   - SceLibLocationDolceProvide
+
+liblocation_permission.suprx:
+   - SceLibLocationPermission
+
+liblocation_provider.suprx:
+   - SceLibLocationProvider
+
+livespace_db.suprx:
+   - SceLsdb
+
+shell.self:
+   - SceShell
+
+#####
+# vs0:app/NPXS10001/
+#####
+np_party_app.suprx:
+   - SceNpPartyAppUtil
+
+#####
+# vs0:app/NPXS10013/
+#####
+gaikai-player.suprx:  #An identical version exists in NPXS10098
+   - gaikai_player
+
+libSceSecondScreen.suprx:
+   - SceSecondScreen
+
+#####
+# vs0:app/NPXS10015/
+#####
+system_settings_core.suprx:
+   - SceSystemSettingsCore
+
+
+#####
+# vs0:app/NPXS10065/
+#####
+grief_report_dialog.suprx:
+   - SceGriefReportDialog
+
+#####
+# vs0:app/NPXS10072/
+#####
+email_engine.suprx:
+   - SceEmailEngine
+
+###############
+# TZS modules #
+###############
+
+SceExcpmgr.elf:
+   - SceExcpmgrForTZS
+
+SceKernelIntrMgr.elf:
+   - SceIntrmgrForTZS
+
+SceSysmem.elf:
+   - SceSysmemForTZS
+   - SceDipswForTZS
+   - SceUartForTZS
+   - SceDebugForTZS
+   - SceCpuForTZS
+   - SceSysclibForTZS
+   - SceSysrootForTZS
+   - SceQafMgrForTZS
+   - ScePmMgrForTZS
+   - SceSblAIMgrForTZS

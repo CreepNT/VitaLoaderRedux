@@ -1,0 +1,24 @@
+# Vita functions which do not return
+# Write the function's real name followed by the systematic name(s)
+# (names should not start with '_' since these are stripped during checking)
+
+stack_chk_fail
+SceSysclibForDriver_B997493D
+SceLibKernel_37691BF8
+SceLibSsp_39AD080B
+
+sceKernelExitProcessForUser
+SceProcessmgr_C053DC6B
+
+sceKernelStopped
+SceDebugForKernel_F1F0C365
+
+# panic_on_kernel_exception (used by Excpmgr)
+SceDebugForKernel_082B8D6A
+SceDebugForKernel_CCABDD98
+
+sceKernelPanic
+SceDebugForDriver_391B5B74
+
+sceKernelPrintfPanic
+SceDebugForDriver_00CCE39C
