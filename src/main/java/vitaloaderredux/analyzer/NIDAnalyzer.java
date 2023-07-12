@@ -150,10 +150,10 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				//Put the function in global namespace to prevent this from happening.
 				func.setParentNamespace(helper.program.getGlobalNamespace());
 				
-				func.setName(databaseName, SourceType.USER_DEFINED);
+				func.setName(databaseName, SourceType.ANALYSIS);
 				if (importOrExport == IEType.IMPORT) {
 					//Set name for the thunk too
-					func.getThunkedFunction(true).setName(databaseName, SourceType.USER_DEFINED);
+					func.getThunkedFunction(true).setName(databaseName, SourceType.ANALYSIS);
 				}
 				
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
@@ -175,7 +175,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		if (databaseName != null) {
 			// Create a new symbol with the DB's name and set it as primary
 			try {
-				helper.flatAPI.createLabel(varAddr, databaseName, /* Global Namespace */null, true, SourceType.USER_DEFINED);
+				helper.flatAPI.createLabel(varAddr, databaseName, /* Global Namespace */null, true, SourceType.ANALYSIS);
 			} catch (Exception e) {
 				
 			}
