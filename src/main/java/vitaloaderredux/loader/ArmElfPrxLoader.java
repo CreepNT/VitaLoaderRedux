@@ -28,6 +28,7 @@ import ghidra.program.model.data.ByteDataType;
 import ghidra.program.model.data.DataType;
 
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
+import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Data;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.mem.MemoryBlock;
@@ -552,8 +553,15 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		}
 		
 		if (modInfo.tls_top != 0 && modInfo.tls_memsz != 0) {
-			Address tls = modInfoSegmentBase.add(modInfo.tls_top);
-			ctx.createLabeledDataInNamespace(tls, ctx.moduleNamespace, "tls", Datatypes.makeArray(ByteDataType.dataType, (int)modInfo.tls_memsz));
+			Address tls_start = modInfoSegmentBase.add(modInfo.tls_top);
+			Address tls_end = tls_start.add(modInfo.tls_memsz - 1);
+			ctx.listing.setComment(tls_start, CodeUnit.PRE_COMMENT, "--- TLS data start ---");
+			ctx.listing.setComment(tls_end, CodeUnit.POST_COMMENT, "--- TLS data end ---");
+			try {
+				ctx.createLabeledDataInNamespace(tls_start, ctx.moduleNamespace, "tls", Datatypes.makeArray(ByteDataType.dataType, (int)modInfo.tls_memsz));
+			} catch (CodeUnitInsertionException e) {
+				ctx.logf("Could not markup TLS data due to a data conflict");
+			}
 		}
 		
 		//Create a property map that indicates this is a Vita ELF, and can be used by analyzers
