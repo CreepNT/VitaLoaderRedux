@@ -140,36 +140,38 @@ public class Utils {
 	static public String prettifyInhibitBitflag(int inhibitBitflag) {
 		String inhibit = "";
 		if ((inhibitBitflag & 0x10000) != 0)
-			inhibit += "libc.suprx";
+			inhibit += "libc.suprx\n";
 		
 		if ((inhibitBitflag & 0x20000) != 0)
-			inhibit += "libdbg.suprx";
+			inhibit += "libdbg.suprx\n";
 		
 		if ((inhibitBitflag & 0x80000) != 0)
-			inhibit += "libshellsvc.suprx";
+			inhibit += "libshellsvc.suprx\n";
 		
 		if ((inhibitBitflag & 0x100000) != 0)
-			inhibit += "libcdlg.suprx";
+			inhibit += "libcdlg.suprx\n";
 		
 		if ((inhibitBitflag & 0x200000) != 0)
-			inhibit += "libfios2.suprx";
+			inhibit += "libfios2.suprx\n";
 		
 		if ((inhibitBitflag & 0x400000) != 0)
-			inhibit += "apputil.suprx";
+			inhibit += "apputil.suprx\n";
 		
 		if ((inhibitBitflag & 0x800000) != 0)
-			inhibit += "libSceFt2.suprx";
+			inhibit += "libSceFt2.suprx\n";
 		
 		if ((inhibitBitflag & 0x1000000) != 0)
-			inhibit += "libpvf.suprx";
+			inhibit += "libpvf.suprx\n";
 
 		if ((inhibitBitflag & 0x2000000) != 0)
-			inhibit += "libperf.suprx";
+			inhibit += "libperf.suprx\n";
 		
-		if (inhibit == "")
+		if (inhibit == "") {
 			return "No inhibited modules";
-		else
-			return "Inhibited modules:\n" + inhibit;
+		} else {
+			//Use stripTrailing() to remmove trailing '\n'
+			return "Inhibited modules:\n" + inhibit.stripTrailing();
+		}
 	}
 	
 }
