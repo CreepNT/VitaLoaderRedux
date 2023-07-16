@@ -1,6 +1,12 @@
-.gradle/*
-.vscode/*
-build/*
+# Build files
+dist
+build
+
+# Visual Studio Code files
+*.vscode
+
+# Compiled SLEIGH languages
+data/languages/*/*.sla
 
 # Compiled class file
 *.class
@@ -26,10 +32,12 @@ build/*
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# IDE, ant and gradle files
 .settings
 .antProperties.xml
 .project
 .classpath
-bin/help
+.gradle
+
+# Binaries
 bin/
-dist/
