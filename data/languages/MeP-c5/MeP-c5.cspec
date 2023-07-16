@@ -57,7 +57,6 @@
       </output>
 
       <unaffected>
-        <register name="r4"/>
         <register name="r5"/>
         <register name="r6"/>
         <register name="r7"/>
