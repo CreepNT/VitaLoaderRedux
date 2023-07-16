@@ -319,6 +319,13 @@ macro perform_return(reg) {
 #          Tables          #
 #--------------------------#
 
+	
+JmpTarget24: target is major=13 & op1111=1 & sub=8 & imm0410; wimm16 [
+	target = (inst_start & 0xF0000000) | (wimm16 << 8) | (imm0410 << 1);
+] {
+	export *:4 target;
+}
+
 BxxZTarget: target is simm0107 [ target = inst_start + (simm0107 << 1); ] {
 	export *:4 target;
 }
@@ -345,7 +352,7 @@ BCPcondTarget: target is major=13 & op0811=0b1000; wdisp16 [ target = inst_start
 
 @if __HAS_VLIW == "1" && defined(__VLIW_ALIGN)
 	BSRVTarget: target is major=13 & sub=11 & op1111=1 & imm0410; wdisp16 [
-		target = (inst_start + ( (wdisp16 << 8) | (imm0410 << 1) ) ) & ~ $(__VLIW_ALIGN);
+		target = inst_start + ( (wdisp16 << 8) | (imm0410 << 1) );
 		OM = 1;
 		globalset(target, OM);
 	] {
@@ -369,17 +376,17 @@ RmDisp16: wdisp16^"("^Rm^")" is Rm; wdisp16 {
 @endif
 
 SpDisp7: disp7^"("^sp^")" is imm0206 & sp [ disp7 = imm0206 << 2; ] {
-	local addr:4 = (sp + disp7) & ~3;
+	local addr:4 = sp + disp7;
 	export *:4 addr;
 }
 
 TpDisp7Word: disp7^"("^tp^")" is imm0206 & tp [ disp7 = imm0206 << 2; ] {
-	local addr:4 = (tp + disp7) & ~3;
+	local addr:4 = tp + disp7;
 	export *:4 addr;
 }
 
 TpDisp7Half: disp7^"("^tp^")" is imm0106 & tp [ disp7 = imm0106 << 1; ] {
-	local addr:4 = (tp + disp7) & ~1;
+	local addr:4 = tp + disp7;
 	export *:2 addr;
 }
 
@@ -389,12 +396,12 @@ TpDisp7Byte: imm0006^"("^tp^")" is imm0006 & tp {
 }
 
 RmDisp16Word: wdisp16^"("^Rm^")" is Rm; wdisp16 {
-	local addr:4 = (Rm + wdisp16) & ~3;
+	local addr:4 = Rm + wdisp16;
 	export *:4 addr;
 }
 
 RmDisp16Half: wdisp16^"("^Rm^")" is Rm; wdisp16 {
-	local addr:4 = (Rm + wdisp16) & ~1;
+	local addr:4 = Rm + wdisp16;
 	export *:2 addr;
 }
 
@@ -642,13 +649,8 @@ with :OM=0 {
 
 @if __HAS_VLIW == "1"
 			:JSRV Rm is Rn=0b1000 & Rm [ OM = 1; ] { #0001_1000_mmmm_1111
-@if VL32_OPT == "1"
-				local dst:4 = Rm & ~3:4;
-@else #VL64_OPT
-				local dst:4 = Rm & ~7:4;
-@endif
 				lp = (inst_next | 1);
-				call [dst];
+				call [Rm];
 			}
 @endif
 		}
@@ -723,8 +725,7 @@ with :OM=0 {
 @if COP_OPT == "1"
 	with :major=3 {
 		:SWCPI CRn,RmMemInc is sub=0 & CRn & RmMemInc { #0011_nnnn_mmmm_0000
-			local dst:4 = RmMemInc & ~3;
-			*:4 dst = CRn:4;
+			*:4 RmMemInc = CRn:4;
 			RmMemInc = RmMemInc + 4;
 		}
 		
@@ -736,42 +737,35 @@ with :OM=0 {
 			#This implementation sets the bottom 32-bits of the target register from
 			#memory while keeping the top 32-bits of the target register untouched.
 			#
-			local src:4 = RmMemInc & ~3;
-			CRn[0,32] = *:4 src;
+			CRn[0,32] = *:4 RmMemInc;
 			RmMemInc = RmMemInc + 4;
 		}
 		
 		:SMCPI CRn,RmMemInc is sub=2 & CRn & RmMemInc { #0011_nnnn_mmmm_0010
-			local dst:4 = RmMemInc & ~7;
-			*:8 dst = CRn:8;
+			*:8 RmMemInc = CRn:8;
 			RmMemInc = RmMemInc + 8;
 		}
 		
 		:LMCPI CRn,RmMemInc is sub=3 & CRn & RmMemInc { #0011_nnnn_mmmm_0011
-			local src:4 = RmMemInc & ~7;
-			CRn = *:8 src;
+			CRn = *:8 RmMemInc;
 			RmMemInc = RmMemInc + 8;
 		}
 		
 		:SWCP CRn,RmMem is sub=8 & CRn & RmMem { #0011_nnnn_mmmm_1000
-			local dst:4 = RmMem & ~3;
-			*:4 dst = CRn:4;
+			*:4 RmMem = CRn:4;
 		}
 		
 		:LWCP CRn,RmMem is sub=9 & CRn & RmMem { #0011_nnnn_mmmm_1001
 			#IMPLEMENTATION NOTE: SEE LWCPI
-			local src:4 = RmMem & ~3;
-			CRn[0,32] = *:4 src;
+			CRn[0,32] = *:4 RmMem;
 		}
 		
 		:SMCP CRn,RmMem is sub=10 & CRn & RmMem { #0011_nnnn_mmmm_1010
-			local dst:4 = RmMem & ~7;
-			*:8 dst = CRn:8;
+			*:8 RmMem = CRn:8;
 		}
 		
 		:LMCP CRn,RmMem is sub=11 & CRn & RmMem { #0011_nnnn_mmmm_1011
-			local src:4 = RmMem & ~7;
-			CRn = *:8 src;
+			CRn = *:8 RmMem;
 		}
 	}
 @endif
@@ -1189,12 +1183,6 @@ with :OM=0 {
 			goto BCPcondTarget;
 	}
 @endif
-	
-	JmpTarget24: target is major=13 & op1111=1 & sub=8 & imm0410; wimm16 [
-		target = (inst_start & 0xF0000000) | (wimm16 << 8) | (imm0410 << 1);
-	] {
-		export *:4 target;
-	}
 	
 	#1101_1TTT_TTTT_1000 tttt_tttt_tttt_tttt (target24=tttt_tttt_tttt_tttt||TTT_TTTT||0)
 	:JMP JmpTarget24 is JmpTarget24 {
@@ -1754,27 +1742,23 @@ with :OM=0 {
 
 	#1111_nnnn_mmmm_1100 dddd_dddd_dddd_dddd
 	:SWCP CRn,RmDisp16 is (major=15 & sub=12 & CRn) ... & RmDisp16 {
-		local dst:4 = RmDisp16 & ~3;
-		*:4 dst = CRn:4;
+		*:4 RmDisp16 = CRn:4;
 	}
 	
 	#1111_nnnn_mmmm_1101 dddd_dddd_dddd_dddd
 	:LWCP CRn,RmDisp16 is (major=15 & sub=13 & CRn) ... & RmDisp16 {
 		#IMPLEMENTATION NOTE: SEE LWCPI
-		local src:4 = RmDisp16 & ~3;
-		CRn[0,32] = *:4 src;
+		CRn[0,32] = *:4 RmDisp16;
 	}
 	
 	#1111_nnnn_mmmm_1110 dddd_dddd_dddd_dddd
 	:SMCP CRn,RmDisp16 is (major=15 & sub=14 & CRn) ... & RmDisp16 {
-		local dst:4 = RmDisp16 & ~7;
-		*:8 dst = CRn;
+		*:8 RmDisp16 = CRn;
 	}
 	
 	#1111_nnnn_mmmm_1111 dddd_dddd_dddd_dddd
 	:LMCP CRn,RmDisp16 is (major=15 & sub=15 & CRn) ... & RmDisp16 {
-		local src:4 = RmDisp16 & ~7;
-		CRn = *:8 src;
+		CRn = *:8 RmDisp16;
 	}
 @endif #COP_OPT == 1
 
