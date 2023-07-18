@@ -1085,12 +1085,12 @@ with :OM=0 {
 	
 	#1100_nnnn_mmmm_0010 iiii_iiii_iiii_iiii
 	:SLT3 Rn,Rm,wsimm16 is (major=12 & sub=2 & Rn & Rm); wsimm16 {
-		r0 = zext(Rm s< sext(wsimm16:2));
+		Rn = zext(Rm s< sext(wsimm16:2));
 	}
 	
 	#1100_nnnn_mmmm_0011 iiii_iiii_iiii_iiii
 	:SLTU3 Rn,Rm,wimm16 is (major=12 & sub=3 & Rn & Rm); wimm16 {
-		r0 = zext(Rm < zext(wimm16:2));
+		Rn = zext(Rm < zext(wimm16:2));
 	}
 	
 	#1100_nnnn_mmmm_0100 iiii_iiii_iiii_iiii
