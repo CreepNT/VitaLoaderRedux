@@ -229,6 +229,7 @@ define token instr (16)
     imm0810=(8,10)
     imm0811=(8,11)
     
+    simm0007=(0,7) signed
     simm0107=(1,7) signed
     simm0207=(2,7) signed
     simm0111=(1,11) signed
@@ -817,8 +818,8 @@ with :OM=0 {
     # Major Opcode 5 #
     #----------------#
 
-    :MOV Rn,imm0007 is major=5 & Rn & imm0007 {
-        Rn = imm0007:4;
+    :MOV Rn,simm0007 is major=5 & Rn & simm0007 {
+        Rn = sext(simm0007:1);
     }
 
     #----------------#
