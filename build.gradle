@@ -59,4 +59,6 @@ dependencies {
 }
 
 // Exclude additional files from the built extension
-// Ex: buildExtension.exclude '.idea/**'
+buildExtension.exclude 'README.md'
+buildExtension.exclude '.github/**'
+buildExtension.exclude 'data/languages/*/*.sla'
