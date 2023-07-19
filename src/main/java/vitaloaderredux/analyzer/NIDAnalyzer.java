@@ -118,8 +118,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 	// These lists store the VA of every function/variable seen during this run of
 	// the analyzer.
-	ArrayList<Long> knownFunctionsList = new ArrayList<Long>();
-	ArrayList<Long> knownVariablesList = new ArrayList<Long>();
+	ArrayList<Long> knownFunctionsList;
+	ArrayList<Long> knownVariablesList;
 
 	// Returns whether or not address was in VA list, and adds it in VA list if false.
 	private static boolean checkAndSetKnownAddress(ArrayList<Long> vaList, Address addr) {
@@ -187,7 +187,9 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			throws CancelledException {
 
 		helper = new ProgramProcessingHelper(program);
-
+		knownFunctionsList = new ArrayList<Long>();
+		knownVariablesList = new ArrayList<Long>();
+		
 		File databaseFile = null;
 		try {
 			switch (chosenDB) {
