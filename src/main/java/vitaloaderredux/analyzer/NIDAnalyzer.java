@@ -97,15 +97,11 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		chosenDB = options.getEnum(DATABASE_CHOICE_NAME, DATABASE_CHOICE_DEFAULT);
 		clearOldNames = options.getBoolean(DELETE_OLD_OPTION_NAME, DELETE_OLD_OPTION_DEFAULT);
 	}
-	
-	private boolean isSystematicName(String libraryName, String symbolName) {
-		return symbolName.startsWith(libraryName + "_") && Utils.isSystematicName(symbolName);
-	}
 
 	private void deleteNonSystematicNamedSymbols(Address address, String libraryName, boolean functionSymbols) {
 		Symbol[] symbols = helper.symTbl.getSymbols(address);
 		for (Symbol sym : symbols) {
-			if (isSystematicName(libraryName, sym.getName(false)))
+			if (Utils.isSystematicName(sym.getName(false)))
 				continue;
 
 			if (functionSymbols) { // Function symbols have to be deleted with this method.
