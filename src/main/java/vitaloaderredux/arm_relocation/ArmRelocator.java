@@ -6,7 +6,6 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.mem.MemoryBlock;
-
 import vitaloaderredux.elf.MalformedElfException;
 
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
@@ -38,25 +37,32 @@ public class ArmRelocator {
 		R_ARM_RBASE = 255;
 	
 	private final ArmElfPrxLoaderContext ctx;
+	private final int __varImportBlockSize;
 	private final int variableSize;
 	private int curVariablesNum = 0;
 	private final int maxVariablesNum;
 	
-	private MemoryBlock varImportBlock;
+	private MemoryBlock varImportBlock = null;
 	private Address blockStartAddr;
 	
 	public ArmRelocator(ArmElfPrxLoaderContext context, int varImportBlockStartVA, int varImportBlockSize, int perVariableSize) throws Exception {
 		ctx = context;
 		variableSize = perVariableSize;
+		__varImportBlockSize = varImportBlockSize;
 		maxVariablesNum = varImportBlockSize / perVariableSize;
 		
 		blockStartAddr = ctx.getAddressInDefaultAS(varImportBlockStartVA);
-		varImportBlock = ctx.memory.createUninitializedBlock("VarImport", blockStartAddr, varImportBlockSize, false);
+	}
 	
-		varImportBlock.setRead(true);
-		varImportBlock.setWrite(true);
-		varImportBlock.setExecute(false);
-		varImportBlock.setComment("Imported variables memory block");
+	private void __allocBlk() throws Exception {
+		if (varImportBlock == null) {
+			varImportBlock = ctx.memory.createUninitializedBlock("VarImport", blockStartAddr, __varImportBlockSize, false);
+			
+			varImportBlock.setRead(true);
+			varImportBlock.setWrite(true);
+			varImportBlock.setExecute(false);
+			varImportBlock.setComment("Imported variables memory block");
+		}
 	}
 	
 	/**
@@ -85,6 +91,8 @@ public class ArmRelocator {
 	 * @throws Exception
 	 */
 	public Address allocateImportVariableSlot(String libraryName, int variableNID, boolean tls) throws Exception {
+		__allocBlk();
+		
 		if (curVariablesNum >= maxVariablesNum) {
 			throw new LoadException("Import variable block overflow");
 		}
@@ -318,6 +326,8 @@ public class ArmRelocator {
 	 * @param destAddr  	Address of the referenced data/function
 	 */
 	public void processReftable(Address refTableAddr, Address destAddr) throws Exception {
+		__allocBlk();
+		
 		final int destVA = (int)destAddr.getUnsignedOffset();
 		
 		if (ctx.elfEhdr.isPrx1ELF()) {
