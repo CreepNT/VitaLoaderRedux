@@ -26,7 +26,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 	
 	//For e_type
 	static private final int ETSCEEXEC = 0xFE00, 
-		ETSCERELEXEC = 0xFE04, ETSCEPSP2RELEXEC = 0xFFA5;
+		ETSCERELEXEC = 0xFE04, ETSCEARMRELEXEC = 0xFFA5;
 	
 	static private final int EHDR_SIZE = 52, PHDR_SIZE = 0x20, SHDR_SIZE = 0x28;
 	
@@ -34,7 +34,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 	
 	public enum ElfType implements StructConverter {
 		ET_REL, ET_EXEC, ET_CORE,
-		ET_SCE_EXEC, ET_SCE_RELEXEC, ET_SCE_PSP2RELEXEC;
+		ET_SCE_EXEC, ET_SCE_RELEXEC, ET_SCE_ARMRELEXEC;
 
 		static public ElfType fromInteger(int itype) {
 			itype &= 0xFFFF;
@@ -43,7 +43,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 			if (itype == ElfConstants.ET_CORE) return ET_CORE;
 			if (itype == ETSCEEXEC) return ET_SCE_EXEC;
 			if (itype == ETSCERELEXEC) return ET_SCE_RELEXEC;
-			if (itype == ETSCEPSP2RELEXEC) return ET_SCE_PSP2RELEXEC;
+			if (itype == ETSCEARMRELEXEC) return ET_SCE_ARMRELEXEC;
 			throw new IllegalArgumentException("Unreachable");
 		}
 				
@@ -54,7 +54,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 			case ET_CORE: return "Core file";
 			case ET_SCE_EXEC: return "SCE Executable";
 			case ET_SCE_RELEXEC: return "SCE Relocatable Executable";
-			case ET_SCE_PSP2RELEXEC: return "PSP2 Relocatable Executable";
+			case ET_SCE_ARMRELEXEC: return "ARM Relocatable Executable";
 			default: throw new IllegalArgumentException("Unreachable");
 			}
 		}
@@ -62,7 +62,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 		public boolean relocatable() {
 			return 	(this == ET_REL) ||
 					(this == ET_SCE_RELEXEC) ||
-					(this == ET_SCE_PSP2RELEXEC);
+					(this == ET_SCE_ARMRELEXEC);
 		}
 		
 		static public DataType getDataType() {
@@ -73,7 +73,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 				ELFTYPE_ENUM.add("ET_CORE", ElfConstants.ET_CORE);
 				ELFTYPE_ENUM.add("ET_SCE_EXEC", ETSCEEXEC);
 				ELFTYPE_ENUM.add("ET_SCE_RELEXEC", ETSCERELEXEC);
-				ELFTYPE_ENUM.add("ET_SCE_PSP2RELEXEC", ETSCEPSP2RELEXEC);
+				ELFTYPE_ENUM.add("ET_SCE_ARMRELEXEC", ETSCEARMRELEXEC);
 			}
 			return ELFTYPE_ENUM;
 		}
@@ -448,7 +448,7 @@ public class ElfEhdr implements StructConverter, Writeable {
 	}
 	
 	public boolean isPrx1ELF() {
-		if (e_type == (short)ETSCEPSP2RELEXEC)
+		if (e_type == (short)ETSCEARMRELEXEC)
 			return true;
 		
 		if (e_type == ElfConstants.ET_EXEC)
