@@ -16,7 +16,7 @@ public class ElfPhdr {
 	static public final int PT_SCE_COMMENT = 0x6FFFFF00;
 	static public final int PT_SCE_VERSION = 0x6FFFFF01;
 	static public final int PT_ARM_UNWIND  = 0x70000001; //Also called PT_ARM_EXIDX
-	static public final int PT_SCE_PPURELA = 0x700000A4; //Used for relocations in old fw
+	static public final int PT_SCE_ARMRELA = 0x700000A4; //Used for relocations in PRX1 format
 
 	/**
 	 * @return DataType for the p_type field
@@ -30,7 +30,7 @@ public class ElfPhdr {
 		dt.add("PT_SCE_COMMENT", PT_SCE_COMMENT);
 		dt.add("PT_SCE_VERSION", PT_SCE_VERSION);
 		dt.add("PT_ARM_UNWIND", PT_ARM_UNWIND, "Exception unwind tables segment");
-		dt.add("PT_SCE_PPURELA", PT_SCE_PPURELA, "Legacy relocation segment");
+		dt.add("PT_SCE_ARMRELA", PT_SCE_ARMRELA, "PRX1 relocation segment");
 		return dt;
 	}
 	

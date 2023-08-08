@@ -347,7 +347,7 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 					Phdr.p_type == ElfPhdr.PT_SCE_COMMENT || 
 					Phdr.p_type == ElfPhdr.PT_SCE_VERSION ||
 					Phdr.p_type == ElfPhdr.PT_ARM_UNWIND   ||
-					Phdr.p_type == ElfPhdr.PT_SCE_PPURELA) {
+					Phdr.p_type == ElfPhdr.PT_SCE_ARMRELA) {
 				String segmentName = null, comment = null;
 				switch ((int)Phdr.p_type) {
 				case ElfPhdr.PT_SCE_RELA: {
@@ -370,9 +370,9 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 					comment = "Exception unwind tables segment";
 					break;
 				}
-				case ElfPhdr.PT_SCE_PPURELA: {
-					segmentName = "PPURELA";
-					comment = "Legacy relocation segment";
+				case ElfPhdr.PT_SCE_ARMRELA: {
+					segmentName = "ARMRELA";
+					comment = "PRX1 relocation segment";
 					break;
 				}
 				}
