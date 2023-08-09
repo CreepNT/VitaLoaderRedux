@@ -138,7 +138,7 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		
 		//Place at end of address space with 4KiB per variable, up to 128 variables
 		//Don't make block too big to avoid hindering navigation using the scroll bar!
-		list.add(new HexOption(VARIMPORT_BLOCK_ADDRESS_OPTNAME, 0xF0000000L));
+		list.add(new HexOption(VARIMPORT_BLOCK_ADDRESS_OPTNAME, 0xFFF00000L));
 		list.add(new HexOption(VARIMPORT_BLOCK_SIZE_OPTNAME, 0x80000L));
 		list.add(new HexOption(VARIMPORT_SIZE_OPTNAME, 0x1000L));
 		return list;
