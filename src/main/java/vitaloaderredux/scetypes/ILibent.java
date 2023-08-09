@@ -9,6 +9,7 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.FunctionDefinitionDataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.TerminatedStringDataType;
+import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.symbol.Namespace;
 
@@ -19,20 +20,43 @@ import vitaloaderredux.misc.sdt_probedesc_t;
 import vitaloaderredux.misc.Utils;
 
 public abstract class ILibent {
-	public static final String STRUCTURE_NAME = "SceLibent";
-
 	// Library NID returned when it cannot be obtained.
 	// In theory, a library could have this value as its NID,
 	// however the chances of this happening as so small this
 	// that this will Probably Never� cause any problem.
 	public static final int UNKNOWN_NID = 0xFFFFFFFF;
+	
+	protected abstract String _structureName();
 
+	protected final DataType _getCommonDataType(DataType libAttrType, boolean newname) {
+		final DataType ubyte = Datatypes.u8, ushort = Datatypes.u16;
+				
+		StructureDataType common = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryEntryTable_ppu_common", 0);
+		common.add(ubyte, "structsize", "Size of this structure");
+		common.add(Datatypes.makeArray(ubyte, 1), "reserved1", "");
+		common.add(ushort, "version", "Library version");
+		common.add(libAttrType, "attribute", "Library attributes");
+		common.add(ushort, "nfunc", "Number of exported functions");
+		common.add(ushort, "nvar", "Number of exported variables");
+		common.add(ushort, "ntlsvar", "Number of exported TLS variables");
+		common.add(ubyte, "hashinfo", "Hash info (varinfo << 4 | funcinfo)");
+		common.add(ubyte, "hashinfotls", "TLS hash info");
+		common.add(Datatypes.makeArray(ubyte, 1), "reserved2", "");
+		common.add(ubyte, "nidaltsets", "");
+		
+		if (!newname) {
+			return common;
+		}
+		
+		return new TypedefDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryEntryTable_prx2_common", common);
+	}
+	
 	protected byte auxattribute;
-	protected byte[] version = new byte[2];
-	protected int attributes;
-	protected int nFunctions;
-	protected int nVariables;
-	protected int nTLSVariables;
+	protected int version;
+	protected int attribute;
+	protected int nfunc;
+	protected int nvar;
+	protected int ntlsvar;
 	protected short hashinfo;
 	protected short hashinfotls;
 	protected short nidaltsets;
@@ -41,50 +65,50 @@ public abstract class ILibent {
 	// variables and TLS variables exports, in this order.
 	//
 	// The entry table holds pointers to the functions or the variables.
-	protected int NIDTableAddress;
-	protected int entryTableAddress;
+	protected int nidtable;
+	protected int addtable;
 
-	protected int libraryNID;
-	protected int libraryNameAddress;
+	protected int libname_nid;
+	protected int libname;
 
-	public byte[] getVersion() {
-		return version.clone();
+	public int getVersion() {
+		return version;
 	}
 
 	public int getAttributes() {
-		return attributes;
+		return attribute;
 	}
 
 	public int getExportsCount() {
-		return nFunctions + nVariables + nTLSVariables;
+		return nfunc + nvar + ntlsvar;
 	}
 
 	public int getFunctionsCount() {
-		return nFunctions;
+		return nfunc;
 	}
 
 	public int getVariablesCount() {
-		return nVariables;
+		return nvar;
 	}
 
 	public int getTLSVariablesCount() {
-		return nTLSVariables;
+		return ntlsvar;
 	}
 
 	public int getNIDTableVA() {
-		return NIDTableAddress;
+		return nidtable;
 	}
 
 	public int getEntryTableVA() {
-		return entryTableAddress;
+		return addtable;
 	}
 
 	public int getLibraryNID() {
-		return libraryNID;
+		return libname_nid;
 	}
 
 	public int getLibraryNameVA() {
-		return libraryNameAddress;
+		return libname;
 	}
 
 	// Filled during processing.
@@ -335,18 +359,18 @@ public abstract class ILibent {
 		libraryNS = ctx.moduleNamespace;
 
 		// (2) Markup the libent in the listing
-		ctx.createLabeledDataInNamespace(libentAddress, ctx.moduleNamespace, STRUCTURE_NAME,
+		ctx.createLabeledDataInNamespace(libentAddress, ctx.moduleNamespace, _structureName(),
 				this.toDataType(ctx.libraryAttributesType));
 
 		// (3) Markup and parse the export table
-		final Address nidTblAddr = ctx.getAddressInDefaultAS(NIDTableAddress);
-		final Address entTblAddr = ctx.getAddressInDefaultAS(entryTableAddress);
+		final Address nidTblAddr = ctx.getAddressInDefaultAS(nidtable);
+		final Address entTblAddr = ctx.getAddressInDefaultAS(addtable);
 
-		if (nTLSVariables != 0) {
+		if (ntlsvar != 0) {
 			ctx.logger.appendMsg("MAINEXPORT export library reports TLS variables !");
 		}
 
-		final int nExports = nFunctions + nVariables;
+		final int nExports = nfunc + nvar;
 		ctx.createLabeledDataInNamespace(nidTblAddr, ctx.moduleNamespace, "_MAINEXPORT_nid_table",
 				Datatypes.makeArray(Datatypes.u32, nExports));
 		ctx.createLabeledDataInNamespace(entTblAddr, ctx.moduleNamespace, "_MAINEXPORT_entry_table",
@@ -354,13 +378,13 @@ public abstract class ILibent {
 
 		IntBuffer nidTable = ctx.readIntTable(nidTblAddr, nExports);
 		IntBuffer entTable = ctx.readIntTable(entTblAddr, nExports);
-		for (int i = 0; i < nFunctions; i++) {
+		for (int i = 0; i < nfunc; i++) {
 			ctx.monitor.checkCancelled();
 			final int funcNID = nidTable.get(i), funcVA = entTable.get(i);
 			processMAINEXPORTFunction(funcNID, funcVA);
 		}
 		
-		for (int i = nFunctions; i < nExports; i++) {
+		for (int i = nfunc; i < nExports; i++) {
 			ctx.monitor.checkCancelled();
 			final int varNID = nidTable.get(i), varVA = entTable.get(i);
 			processMAINEXPORTVariable(varNID, varVA);
@@ -382,13 +406,13 @@ public abstract class ILibent {
 	private String generateExportPlateComment(String kind, int importNID) {
 		String comment = "--- EXPORTED " + kind.toUpperCase() + " ---\n";
 		comment += "Library: " + libraryName;
-		if (libraryNID != ILibstub.UNKNOWN_NID) {
-			comment += String.format(" (NID 0x%08X)\n", libraryNID);
+		if (libname_nid != ILibstub.UNKNOWN_NID) {
+			comment += String.format(" (NID 0x%08X)\n", libname_nid);
 		} else {
 			comment += "\n";
 		}
 
-		if ((attributes & SELFConstants.SCE_LIBRARY_ATTR_SYSCALL_EXPORT) != 0) {
+		if ((attribute & SELFConstants.SCE_LIBRARY_ATTR_SYSCALL_EXPORT) != 0) {
 			comment += "Syscall exported function\n";
 		}
 
@@ -416,8 +440,7 @@ public abstract class ILibent {
 		final Address varAddr = ctx.getAddressInDefaultAS(va);
 		if (!ctx.memory.contains(varAddr)) {
 			// Some modules (e.g. SceKernelPsp2Config) export variables that are outside the
-			// modules.
-			// Simply log a message but skip processing these variables to avoid
+			// modules. Simply log a message but skip processing these variables to avoid
 			// catastrophic failures.
 			ctx.logger.appendMsg(String.format("Skipped exported variable %s: address 0x%08X not in memory.", name, va));
 			return;
@@ -439,8 +462,8 @@ public abstract class ILibent {
 
 	public void process(ArmElfPrxLoaderContext processingContext, Address libentAddress) throws Exception {
 		// (0) Verify sanity. SYSCALL_EXPORT libraries are not allowed to export variables.
-		if ((attributes & SELFConstants.SCE_LIBRARY_ATTR_SYSCALL_EXPORT) != 0
-				&& (nVariables != 0 || nTLSVariables != 0)) {
+		if ((attribute & SELFConstants.SCE_LIBRARY_ATTR_SYSCALL_EXPORT) != 0
+				&& (nvar != 0 || ntlsvar != 0)) {
 			throw new MalformedElfException("SYSCALL_EXPORT library exports variables");
 		}
 
@@ -452,7 +475,7 @@ public abstract class ILibent {
 		}
 
 		// (1) Read the library's name
-		final Address libNameAddr = ctx.getAddressInDefaultAS(libraryNameAddress);
+		final Address libNameAddr = ctx.getAddressInDefaultAS(libname);
 		{
 			BinaryReader nameReader = ctx.getBinaryReader(libNameAddr);
 			libraryName = nameReader.readNextAsciiString();
@@ -462,7 +485,7 @@ public abstract class ILibent {
 		libraryNS = ctx.getOrCreateNamespace(null, "+" + libraryName);
 
 		// (3) Markup the libent and library name in the listing
-		ctx.createLabeledDataInNamespace(libentAddress, libraryNS, STRUCTURE_NAME,
+		ctx.createLabeledDataInNamespace(libentAddress, libraryNS, _structureName(),
 				this.toDataType(ctx.libraryAttributesType));
 		ctx.createLabeledDataInNamespace(libNameAddr, libraryNS, "_" + libraryName + "_stub_str",
 				new TerminatedStringDataType());
@@ -471,29 +494,29 @@ public abstract class ILibent {
 		// The NID table is a contiguous array of NIDs, while the entry table is a
 		// contiguours array of pointers.
 		// The order is functions first, followed by variables then TLS variables.
-		final Address nidTblAddr = ctx.getAddressInDefaultAS(NIDTableAddress);
-		final Address entTblAddr = ctx.getAddressInDefaultAS(entryTableAddress);
+		final Address nidTblAddr = ctx.getAddressInDefaultAS(nidtable);
+		final Address entTblAddr = ctx.getAddressInDefaultAS(addtable);
 
-		final int nExports = nFunctions + nVariables + nTLSVariables;
+		final int nExports = nfunc + nvar + ntlsvar;
 		// TODO: are these names correct?
-		ctx.createLabeledDataInNamespace(nidTblAddr, libraryNS, "_" + libraryName + "_nid_table",
+		ctx.createLabeledDataInNamespace(nidTblAddr, libraryNS, "_" + libraryName + "_nidtable",
 				Datatypes.makeArray(Datatypes.u32, nExports));
-		ctx.createLabeledDataInNamespace(entTblAddr, libraryNS, "_" + libraryName + "_entry_table",
+		ctx.createLabeledDataInNamespace(entTblAddr, libraryNS, "_" + libraryName + "_addtable",
 				Datatypes.makeArray(Datatypes.ptr, nExports));
 
 		IntBuffer nidTable = ctx.readIntTable(nidTblAddr, nExports);
 		IntBuffer entTable = ctx.readIntTable(entTblAddr, nExports);
-		for (int i = 0; i < nFunctions; i++) {
+		for (int i = 0; i < nfunc; i++) {
 			ctx.monitor.checkCancelled();
 			final int funcNID = nidTable.get(i), funcVA = entTable.get(i);
 			processFunction(funcNID, funcVA);
 		}
-		for (int i = nFunctions; i < (nFunctions + nVariables); i++) {
+		for (int i = nfunc; i < (nfunc + nvar); i++) {
 			ctx.monitor.checkCancelled();
 			final int varNID = nidTable.get(i), varVA = entTable.get(i);
 			processVariable(varNID, varVA, false);
 		}
-		for (int i = (nFunctions + nVariables); i < nExports; i++) {
+		for (int i = (nfunc + nvar); i < nExports; i++) {
 			ctx.monitor.checkCancelled();
 			final int TLSVarNID = nidTable.get(i), TLSVarVA = entTable.get(i);
 			processVariable(TLSVarNID, TLSVarVA, true);

@@ -53,11 +53,11 @@ import vitaloaderredux.misc.ImportExportProperty;
 import vitaloaderredux.scetypes.ILibent;
 import vitaloaderredux.scetypes.ILibstub;
 import vitaloaderredux.scetypes.SELFConstants;
-import vitaloaderredux.scetypes.SceLibent_0x1C;
-import vitaloaderredux.scetypes.SceLibent_0x20;
-import vitaloaderredux.scetypes.SceLibstub_0x24;
-import vitaloaderredux.scetypes.SceLibstub_0x2C;
-import vitaloaderredux.scetypes.SceLibstub_0x34;
+import vitaloaderredux.scetypes.SceKernelLibraryEntryTable_arm;
+import vitaloaderredux.scetypes.SceKernelLibraryEntryTable_prx2arm;
+import vitaloaderredux.scetypes.SceKernelLibraryStubTable_0x24;
+import vitaloaderredux.scetypes.SceKernelLibraryStubTable_arm;
+import vitaloaderredux.scetypes.SceKernelLibraryStubTable_prx2arm;
 import vitaloaderredux.scetypes.SceModuleInfo;
 
 /**
@@ -436,16 +436,16 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		ctx.createLabeledDataInNamespace(modInfoAddr, ctx.moduleNamespace, "__sce_moduleinfo", modInfo.toDataType(moduleAttributes));
 		
 		//Parse imports if available
-		if (modInfo.libstub_top != modInfo.libstub_btm) {
+		if (modInfo.stub_top != modInfo.stub_end) {
 			//NOTE: it is not valid to create an address from libstub_btm
 			//because it may not belong in the address space covered by the ELF.
-			Address firstLibstub = modInfoSegmentBase.add(modInfo.libstub_top);
+			Address firstLibstub = modInfoSegmentBase.add(modInfo.stub_top);
 			
 			//Read-ahead the size of the libstub used in this SELF.
 			//Since mixing different libstub structures is illegal,
 			//this allows us to know how many of them there are.
 			final int libstubSize = ctx.getBinaryReader(firstLibstub).readNextUnsignedShort();
-			final long libstubBlockSize = modInfo.libstub_btm - modInfo.libstub_top;
+			final long libstubBlockSize = modInfo.stub_end - modInfo.stub_top;
 			if ((libstubBlockSize % libstubSize) != 0) {
 				throw new MalformedElfException("Libstub block size is not a multiple of the libstub size!");
 			}
@@ -458,17 +458,17 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 				BinaryReader libstubReader = ctx.getBinaryReader(currentLibstub);
 				ILibstub libstub;
 				switch(libstubSize) {
-				case SceLibstub_0x24.SIZE:
-					libstub = new SceLibstub_0x24(libstubReader);
+				case SceKernelLibraryStubTable_0x24.SIZE:
+					libstub = new SceKernelLibraryStubTable_0x24(libstubReader);
 					break;
-				case SceLibstub_0x2C.SIZE:
-					libstub = new SceLibstub_0x2C(libstubReader);
+				case SceKernelLibraryStubTable_arm.SIZE:
+					libstub = new SceKernelLibraryStubTable_arm(libstubReader);
 					break;
-				case SceLibstub_0x34.SIZE:
-					libstub = new SceLibstub_0x34(libstubReader);
+				case SceKernelLibraryStubTable_prx2arm.SIZE:
+					libstub = new SceKernelLibraryStubTable_prx2arm(libstubReader);
 					break;
 				default:
-					throw new UnsupportedElfException(String.format("Unknown Libstub size 0x%X", libstubSize));
+					throw new MalformedElfException(String.format("Invalid LibraryStub size 0x%X", libstubSize));
 				}
 				
 				libstub.process(ctx, currentLibstub);
@@ -478,18 +478,18 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		}
 		
 		//Parse exports if available
-		if (modInfo.libent_top != modInfo.libent_btm) {
+		if (modInfo.ent_top != modInfo.ent_end) {
 			boolean hasSeenMAINEXPORT = false;
 			
 			//NOTE: it is not valid to create an address from libent_btm
 			//because it may not belong in the address space covered by the ELF.
-			final Address firstLibent = modInfoSegmentBase.add(modInfo.libent_top);
+			final Address firstLibent = modInfoSegmentBase.add(modInfo.ent_top);
 
 			//Read-ahead the size of the libstub used in this SELF.
 			//Since mixing different libstub structures is illegal,
 			//this allows us to know how many of them there are.
 			final int libentSize = ctx.getBinaryReader(firstLibent).readNextUnsignedShort();
-			final long libentBlockSize = modInfo.libent_btm - modInfo.libent_top;
+			final long libentBlockSize = modInfo.ent_end - modInfo.ent_top;
 			if ((libentBlockSize % libentSize) != 0) {
 				throw new MalformedElfException("Libent block size is not a multiple of the libent size!");
 			}
@@ -502,14 +502,14 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 				BinaryReader libentReader = ctx.getBinaryReader(currentLibent);
 				ILibent libent;
 				switch (libentSize) {
-				case SceLibent_0x1C.SIZE:
-					libent = new SceLibent_0x1C(libentReader);
+				case SceKernelLibraryEntryTable_arm.SIZE:
+					libent = new SceKernelLibraryEntryTable_arm(libentReader);
 					break;
-				case SceLibent_0x20.SIZE:
-					libent = new SceLibent_0x20(libentReader);
+				case SceKernelLibraryEntryTable_prx2arm.SIZE:
+					libent = new SceKernelLibraryEntryTable_prx2arm(libentReader);
 					break;
 				default:
-					throw new UnsupportedElfException(String.format("Unknown Libent size 0x%X", libentSize));
+					throw new MalformedElfException(String.format("Invalid LibraryEntry size 0x%X", libentSize));
 				}
 				
 				if ((libent.getAttributes() & SELFConstants.SCE_LIBRARY_ATTR_MAIN_EXPORT) != 0) {
@@ -532,23 +532,23 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		ctx.setMonitorMessage("Processing SceModuleInfo...");
 		
 		//Markup exidx, extab and TLS
-		if (modInfo.exidx_top < modInfo.exidx_btm) {
-			final int size = (int)(modInfo.exidx_btm - modInfo.exidx_top);
+		if (modInfo.arm_exidx_top < modInfo.arm_exidx_end) {
+			final int size = (int)(modInfo.arm_exidx_end - modInfo.arm_exidx_top);
 			if (size < 0) {
 				throw new MalformedElfException("exidx overflow");
 			}
 			
-			Address exidx = modInfoSegmentBase.add(modInfo.exidx_top);
+			Address exidx = modInfoSegmentBase.add(modInfo.arm_exidx_top);
 			ctx.createLabeledDataInNamespace(exidx, ctx.moduleNamespace, "exidx", Datatypes.makeArray(ByteDataType.dataType, size));
 		}
 		
-		if (modInfo.extab_top < modInfo.extab_btm) {
-			final int size = (int)(modInfo.extab_btm - modInfo.extab_top);
+		if (modInfo.arm_extab_top < modInfo.arm_extab_btm) {
+			final int size = (int)(modInfo.arm_extab_btm - modInfo.arm_extab_top);
 			if (size < 0) {
 				throw new MalformedElfException("extab overflow");
 			}
 			
-			Address extab = modInfoSegmentBase.add(modInfo.extab_top);
+			Address extab = modInfoSegmentBase.add(modInfo.arm_extab_top);
 			ctx.createLabeledDataInNamespace(extab, ctx.moduleNamespace, "extab", Datatypes.makeArray(ByteDataType.dataType, size));
 		}
 		

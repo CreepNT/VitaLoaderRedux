@@ -7,7 +7,9 @@ import ghidra.app.util.bin.BinaryReader;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.symbol.Namespace;
 import ghidra.program.model.data.DataType;
+import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.TerminatedStringDataType;
+import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Function;
 
@@ -16,78 +18,104 @@ import vitaloaderredux.misc.Datatypes;
 import vitaloaderredux.misc.Utils;
 
 public abstract class ILibstub {
-	public static final String STRUCTURE_NAME = "SceLibstub";
-
 	// Library NID returned when it cannot be obtained.
 	// In theory, a library could have this value as its NID,
 	// however the chances of this happening as so small this
 	// that this will Probably Never� cause any problem.
 	public static final int UNKNOWN_NID = 0xFFFFFFFF;
 
-	protected byte[] version = new byte[2];
+	protected abstract String _structureName();
 
-	protected int attributes;
+	protected final DataType _getCommonDataType(DataType libAttrType, boolean newname) {
+		final DataType ubyte = Datatypes.u8, ushort = Datatypes.u16;
+				
+		StructureDataType common = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryStubTable_ppu_common", 0);
+		common.add(ubyte, "structsize", "Size of this structure");
+		common.add(Datatypes.makeArray(ubyte, 1), "reserved1", "");
+		common.add(ushort, "version", "Library version");
+		common.add(libAttrType, "attribute", "Library attributes");
+		common.add(ushort, "nfunc", "Number of functions imported from this library");
+		common.add(ushort, "nvar", "Number of variables imported from this library");
+		common.add(ushort, "ntlsvar", "Number of TLS variables imported from this library");
+		common.add(Datatypes.makeArray(ubyte, 4), "reserved2", "");
+		
+		if (!newname) {
+			return common;
+		}
+		
+		return new TypedefDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryStubTable_prx2_common", common);
+	}
+	
+	protected int version;
+	protected int attribute;
 
-	protected int nFunctions;
-	protected int nVariables;
-	protected int nTLSVariables;
+	protected int nfunc;
+	protected int nvar;
+	protected int ntlsvar;
 
-	protected int libraryNID;
-	protected int libraryNameVA;
+	protected int libname_nid;
+	protected int libname;
 
-	protected int functionNIDTableVA;
-	protected int functionEntryTableVA;
+	protected int func_nidtable;
+	protected int func_table;
 
-	protected int variableNIDTableVA;
-	protected int variableEntryTableVA;
+	protected int var_nidtable;
+	protected int var_table;
+	
+	protected int tls_nidtable;
+	protected int tls_table;
 
-	public byte[] getVersion() {
-		return version.clone();
+	public int getVersion() {
+		return version;
 	}
 
 	public int getAttributes() {
-		return attributes;
+		return attribute;
 	}
 
 	public int getLibraryNameVA() {
-		return libraryNameVA;
+		return libname;
 	}
 
 	public int getLibraryNID() {
-		return libraryNID;
+		return libname_nid;
 	}
 
 	public int getFunctionsCount() {
-		return nFunctions;
+		return nfunc;
 	}
 
 	public int getFunctionsNIDTableAddress() {
-		return functionNIDTableVA;
+		return func_nidtable;
 	}
 
 	public int getFunctionsEntryTableAddress() {
-		return functionEntryTableVA;
+		return func_table;
 	}
 
 	public int getVariablesCount() {
-		return nVariables;
+		return nvar;
 	}
 
 	public int getVariablesNIDTableAddress() {
-		return variableNIDTableVA;
+		return var_nidtable;
 	}
 
 	public int getVariablesEntryTableAddress() {
-		return variableEntryTableVA;
+		return var_table;
 	}
 
 	public int getTLSVariablesCount() {
-		return nTLSVariables;
+		return ntlsvar;
 	}
 
-	public abstract int getTLSVariablesNIDTableAddress();
+	public int getTLSVariablesNIDTableAddress() {
+		return tls_nidtable;
+	}
 
-	public abstract int getTLSVariablesEntryTableAddress();
+	public int getTLSVariablesEntryTableAddress() {
+		return tls_table;
+	}
 
 	public abstract DataType toDataType(DataType libraryAttributesType);
 
@@ -107,8 +135,8 @@ public abstract class ILibstub {
 		String comment = "--- IMPORTED " + kind.toUpperCase() + " ---\n";
 		comment += "Imported from " + moduleFileName + "\n";
 		comment += "Library: " + libraryName;
-		if (libraryNID != ILibstub.UNKNOWN_NID) {
-			comment += String.format(" (NID 0x%08X)\n", libraryNID);
+		if (libname_nid != ILibstub.UNKNOWN_NID) {
+			comment += String.format(" (NID 0x%08X)\n", libname_nid);
 		} else {
 			comment += "\n";
 		}
@@ -162,7 +190,7 @@ public abstract class ILibstub {
 		Address nidTblAddr = ctx.getAddressInDefaultAS(nidTableVA);
 		Address entTblAddr = ctx.getAddressInDefaultAS(entryTableVA);
 
-		ctx.createLabeledDataInNamespace(nidTblAddr, libraryNS, "__" + libraryName + "_" + kind + "_nid_table",
+		ctx.createLabeledDataInNamespace(nidTblAddr, libraryNS, "__" + libraryName + "_" + kind + "_nidtable",
 				Datatypes.makeArray(Datatypes.u32, numElements));
 		ctx.createLabeledDataInNamespace(entTblAddr, libraryNS, "__" + libraryName + "_" + kind + "_table",
 				Datatypes.makeArray(Datatypes.ptr, numElements));
@@ -196,25 +224,25 @@ public abstract class ILibstub {
 		libraryNS = ctx.getOrCreateNamespace(null, "-" + libraryName);
 
 		// (3) Markup the libstub and library name in the listing
-		ctx.createLabeledDataInNamespace(libstubAddress, libraryNS, STRUCTURE_NAME,
+		ctx.createLabeledDataInNamespace(libstubAddress, libraryNS, _structureName(),
 				this.toDataType(ctx.libraryAttributesType));
 		ctx.createLabeledDataInNamespace(libNameAddr, libraryNS, "_" + libraryName + "_stub_str",
 				new TerminatedStringDataType());
 
 		// (4) Parse the libstub tables
-		if (nFunctions > 0) {
-			markupAndProcessTable(functionNIDTableVA, functionEntryTableVA, nFunctions, "func",
+		if (nfunc > 0) {
+			markupAndProcessTable(func_nidtable, func_table, nfunc, "func",
 					(nid, va) -> markupFuncImportAndProcessRela(nid, va));
 		}
 
-		if (nVariables > 0) {
-			markupAndProcessTable(variableNIDTableVA, variableEntryTableVA, nVariables, "var",
+		if (nvar > 0) {
+			markupAndProcessTable(var_nidtable, var_table, nvar, "var",
 					(nid, va) -> markupVarImportAndProcessRela(nid, va, false));
 		}
 
-		if (nTLSVariables > 0) {
+		if (ntlsvar > 0) {
 			int NIDTableVA = getTLSVariablesNIDTableAddress(), entTableVA = getTLSVariablesEntryTableAddress();
-			markupAndProcessTable(NIDTableVA, entTableVA, nTLSVariables, "tls_var",
+			markupAndProcessTable(NIDTableVA, entTableVA, ntlsvar, "tls",
 					(nid, va) -> markupVarImportAndProcessRela(nid, va, true));
 		}
 	}
