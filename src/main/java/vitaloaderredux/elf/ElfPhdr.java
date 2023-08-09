@@ -18,6 +18,9 @@ public class ElfPhdr {
 	static public final int PT_ARM_UNWIND  = 0x70000001; //Also called PT_ARM_EXIDX
 	static public final int PT_SCE_ARMRELA = 0x700000A4; //Used for relocations in PRX1 format
 
+	//Present on .data relocation segment, absent on .text relocation segment.
+	static public final int PF_DATA_RELA = 0x10000;
+	
 	/**
 	 * @return DataType for the p_type field
 	 */

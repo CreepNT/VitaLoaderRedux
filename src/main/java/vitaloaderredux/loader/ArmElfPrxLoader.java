@@ -352,7 +352,11 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 				switch ((int)Phdr.p_type) {
 				case ElfPhdr.PT_SCE_RELA: {
 					segmentName = "SCE_RELA";
-					comment = "Relocation segment";
+					if (((int)Phdr.p_filesz & ElfPhdr.PF_DATA_RELA) != 0) {
+						comment = "Data relocation segment";
+					} else {
+						comment = "Code relocation segment";
+					}
 					break;
 				}
 				case ElfPhdr.PT_SCE_COMMENT: {
@@ -379,9 +383,9 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 				
 				//Check that the segment is not empty and belongs in the file
 				if (Phdr.p_filesz <= 0) {
-					ctx.logf("Skipped zero-length segment #%d (%s)", i, comment.toLowerCase());
+					ctx.logf("Skipped zero-length segment #%d (%s)", i, comment);
 				} else if (Phdr.p_offset > ctx.fileSize || (Phdr.p_offset + Phdr.p_filesz) > ctx.fileSize) {
-					ctx.logf("Skipped segment #%d (%s) spanning outside file", i, comment.toLowerCase());
+					ctx.logf("Skipped segment #%d (%s) spanning outside file", i, comment);
 				} else {
 					Phdr.userData = createFileBytesBlock("seg0" + i + "_" + segmentName, OTHERAS_START, Phdr.p_offset, Phdr.p_filesz, comment, NOACCESS, true);
 				}
