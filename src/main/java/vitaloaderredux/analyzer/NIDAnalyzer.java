@@ -2,6 +2,7 @@ package vitaloaderredux.analyzer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import docking.widgets.filechooser.GhidraFileChooser;
@@ -223,6 +224,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				return false;
 			}
 		} catch (FileNotFoundException e) {
+			log.appendMsg("Could not open NID database file:");
+			log.appendException(e);
 			return false;
 		}
 
@@ -230,7 +233,14 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			return false;
 		}
 
-		database = new NIDDatabase(databaseFile);
+		try {
+			database = new NIDDatabase(databaseFile);
+		} catch (IOException e) {
+			log.appendMsg("Could not load NID database:");
+			log.appendException(e);
+			return false;
+		}
+		
 		ObjectPropertyMap<ImportExportProperty> iepMap = ArmElfPrxLoader.getImportExportPropertyMap(program);
 
 		try {
@@ -254,6 +264,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			}
 
 		} catch (Exception e) {
+			log.appendMsg("Could not load NID database:");
+			log.appendException(e);
 			return false;
 		}
 		return true;

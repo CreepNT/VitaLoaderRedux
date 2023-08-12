@@ -3,6 +3,7 @@ package vitaloaderredux.database;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,7 +75,7 @@ public class NIDDatabase {
 		public Map<String, Long> variables;
 	}
 	
-	public NIDDatabase(File databaseFile) {
+	public NIDDatabase(File databaseFile) throws IOException {
 		try {
 			YamlReader reader = new YamlReader(new FileReader(databaseFile));
 			YAML_Database database = reader.read(YAML_Database.class);
@@ -101,7 +102,7 @@ public class NIDDatabase {
 				}
 			}
 		} catch (FileNotFoundException | YamlException e) {
-			System.out.println("exception " + e);
+			throw e;
 		}
 	}
 
