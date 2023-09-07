@@ -1064,13 +1064,13 @@ with :OM=0 {
 	#(maybe there's a way to do it, cba to search for it)
 	
 	#1100_nnnn_mmmm_0000 iiii_iiii_iiii_iiii (imm16=iiii_iiii_iiii_iiii)
-	:ADD3 Rn,Rm,wimm16 is (major=12 & sub=0 & Rn & Rm); wimm16 {
-		Rn = Rm:4 + sext(wimm16:2);
+	:ADD3 Rn,Rm,wsimm16 is (major=12 & sub=0 & Rn & Rm); wsimm16 {
+		Rn = Rm:4 + wsimm16;
 	}
   
   	#1100_nnnn_0000_0001 iiii_iiii_iiii_iiii
 	:MOV Rn,wsimm16 is (major=12 & sub=1 & Rm=0 & Rn); wsimm16 {
-		Rn = sext(wsimm16:2);
+		Rn = wsimm16;
 	}
 	
 	#1100_nnnn_0001_0001 iiii_iiii_iiii_iiii
