@@ -118,6 +118,7 @@ The following features might be implemented in Redux:
 - xerpi and all contributors - [GhidraVitaLoader script](https://github.com/xerpi/GhidraVitaLoader)
 - xyz - [ghidra-mep](https://github.com/xyzz/ghidra-mep)
 - EsotericSoftware - [YamlBeans](https://github.com/EsotericSoftware/yamlbeans)
+
 Special thanks for pre-release testing and various input:
   - CelesteBlue
   - GrapheneCt
