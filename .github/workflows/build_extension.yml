@@ -1,0 +1,66 @@
+name: Build extension
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and package extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        #108785380 is Ghidra 10.3.1, 111929518 is Ghidra 10.3.2
+        ghidra-release-id: [ "108785380", "111929518" , "latest" ]
+
+    env:
+      GHIDRA_RELEASE_ID: ${{ matrix.ghidra-release-id }}
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+        settings-path: ${{ github.workspace }} # location for the settings.xml file
+
+    #Yoinked from https://github.com/bkerler/ghidra_installer/blob/master/install-ghidra.sh
+    - name: Install Ghidra
+      run: |
+        export GHIDRALINK=`curl -s https://api.github.com/repos/NationalSecurityAgency/ghidra/releases/$GHIDRA_RELEASE_ID | grep "browser_download_url.*zip" | cut -d : -f 2,3 | tr -d \" | tr -d " "`
+        export GHIDRA=`echo $GHIDRALINK | sed 's/^.*\(ghidra.*\).*$/\1/' `
+        export GHIDRADIR=`echo $GHIDRA | sed 's/_20[12][0-9].*//' `
+
+        mkdir build
+        cd build
+        wget -c "$GHIDRALINK" || exit 1
+        unzip "$GHIDRA" > /dev/null || exit 1
+
+        echo GHIDRA_INSTALL_DIR=$PWD/$GHIDRADIR >> "$GITHUB_ENV"
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
+
+    - name: Update extension properties
+      run: |
+        echo "name=@extname@" > extension.properties
+        echo "description=PlayStation®Vita ELF-PRX loader for Ghidra" >> extension.properties
+        echo "author=CreepNT" >> extension.properties
+        date +"createdOn=%Y/%m/%d" >> extension.properties
+        echo "version=@extversion@" >> extension.properties
+
+    - name: Build extension
+      run: gradle
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3.1.3
+      with:
+        name: VitaLoader Redux
+        path: dist/ghidra_*_VitaLoaderRedux.zip
+        if-no-files-found: warn
