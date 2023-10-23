@@ -11,6 +11,7 @@ import ghidra.program.model.data.ParameterDefinitionImpl;
 import ghidra.program.model.data.Pointer32DataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.VoidDataType;
+import ghidra.program.model.listing.BookmarkType;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Function.FunctionUpdateType;
@@ -22,7 +23,8 @@ import vitaloaderredux.loader.ArmElfPrxLoaderContext;
 
 public class sdt_probedesc_t {
 	static public final String STRUCTURE_NAME = "sdt_probedesc_t";
-
+	static private final String PROBE_BOOKMARK_CATEGORY_NAME = "Static Probe Instrumentation Point";
+	
 	public final int sdpd_id;
 	public final int sdpd_provider; // pointer
 	public final int sdpd_name; // pointer
@@ -93,7 +95,8 @@ public class sdt_probedesc_t {
 			DATATYPE.add(Datatypes.u32ptr, "sdpd_id", "Probe ID (filled in when created)");
 			DATATYPE.add(Datatypes.stringptr, "sdpd_provider", "Name of provider");
 			DATATYPE.add(Datatypes.stringptr, "sdpd_name", "Name of probe");
-			DATATYPE.add(Datatypes.ptr, "sdpd_offset", "Instrumentation point (address)");
+			//Make uint to avoid references being automatically created by Ghidra
+			DATATYPE.add(Datatypes.u32, "sdpd_offset", "Instrumentation point (address)");
 			DATATYPE.add(new Pointer32DataType(pHandlerFn), "sdpd_handler_fn",
 					"Probe handler_fn function (NULL if disabled)");
 			DATATYPE.add(Datatypes.ptr, "sdpd_private", "Probe private data");
@@ -161,9 +164,11 @@ public class sdt_probedesc_t {
 		// Markup the instrumentation point
 		if (sdpd_offset != 0) {
 			Address instrumentationPointAddr = ctx.getAddressInDefaultAS(sdpd_offset);
-			ctx.symTbl.createLabel(instrumentationPointAddr, providerName + probeName + "_instrumentation_point",
-					ctx.moduleNamespace, SourceType.ANALYSIS);
-
+			ctx.program.getBookmarkManager().setBookmark(
+					instrumentationPointAddr, BookmarkType.ANALYSIS, PROBE_BOOKMARK_CATEGORY_NAME,
+					providerName + probeName + " instrumentation point"
+			);
+			
 			String comment = makePlateComment();
 			comment += "Probe instrumentation point";
 			ctx.listing.setComment(instrumentationPointAddr, CodeUnit.PLATE_COMMENT, comment);
