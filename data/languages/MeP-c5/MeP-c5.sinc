@@ -521,7 +521,7 @@ with :OM=0 {
 		}
 		
 		:LBU Rn,RmMem is sub=11 & Rn & RmMem { #0000_nnnn_mmmm_1011
-			Rn = *:1 RmMem;
+			Rn = zext(*:1 RmMem);
 		}
 		
 		:LB Rn,RmMem is sub=12 & Rn & RmMem { #0000_nnnn_mmmm_1100
@@ -537,7 +537,7 @@ with :OM=0 {
 		}
 		
 		:LHU Rn,RmMem is sub=15 & Rn & RmMem { #0000_nnnn_mmmm_1111
-			Rn = *:2 RmMem;
+			Rn = zext(*:2 RmMem);
 		}
     }
 
