@@ -1,9 +1,10 @@
 
 # VitaLoader Redux
-PlayStation®Vita ELF-PRX loader for Ghidra
+A Ghidra extension for PlayStation®Vita reverse engineers!
+This extension contains a loader for ELF-PRX modules, MeP-c5 processor and helper scripts.
 
 ## Features 
-Redux can be used in place of the ELF loader provided by Ghidra to load exectuables in ELF-PRX format targetting the PlayStation®Vita platform. **This loader does NOT support standard ELF executables - only use it for ELFs in PRX format.**
+Redux can be used in place of the ELF loader provided by Ghidra to load executables in ELF-PRX format targeting the PlayStation®Vita platform. **This loader does NOT support standard ELF executables - only use it for ELFs in PRX format.**
 
 - Loads ELF files with SCE types (`ET_SCE_EXEC`, `ET_SCE_RELEXEC`, `ET_SCE_PSP2RELEXEC`) and standard types (`ET_REL`, `ET_EXEC`, `ET_CORE` ***in PRX format***)
 - Locates and marks up all module entrypoints
@@ -33,7 +34,7 @@ Naming of imports and exports using a NID database is no longer performed at imp
 The database used for analysis can be changed in the analyzer's settings (`Analysis > Auto Analyze '<program name>'` and select `NID Resolution`).
 
 The following database sources are available:
-- `Builtin` is a [curated database file](TODO) bundled with the extension
+- `Builtin` is a [curated database file](data/BuiltinNIDDatabase.yaml) bundled with the extension
   - Once the extension is installed, the file can be found at `%USERPROFILE%\.ghidra\<Ghidra version>\Extensions\VitaLoaderRedux\data`
   - **This file is deleted when the VitaLoader Redux extension is uninstalled!**
   - *At the moment, the built-in database is mostly empty.*
@@ -47,11 +48,13 @@ The default database source is `Environment` if available, and `Builtin` otherwi
 To apply NIDs from multiple databases successively, untick the `Clear old names` setting.
 
 #### Variable import relocation
-Variable imports are now supported and handled properly ! This also applies to function-as-variable imports. A special memory block is created to "store" all imported variables. The relocations associated to them are applied 
+Variable imports are now supported and handled properly! This also applies to function-as-variable imports.
+A special memory block is created to "store" all imported variables, and relocations are applied so that all code inside the module that accesses them will access them inside the special memory block.
 
-The varimport memory block can be customized at import time by clicking on the `Options...` button in the Import dialog.
+*The variable import memory block can be customized at import time by clicking on the `Options...` button in the Import dialog. (The dialog where `Executable Type` is selected)*
 
-Due to the way relocation is performed, certain code patterns will confuse the decompiler. For example, C code that should read as
+Due to the way relocation is performed, certain code patterns will confuse the decompiler.
+For example, C code that should read as
 ```c
 if (&sceWeaklyImportedFunction != NULL) {
    sceWeaklyImportedFunction();
@@ -65,7 +68,9 @@ if (true) {
 ```
 i.e. the condition will always evaluate to 1.
 
-The assembly will now however hold a reference to the function thunk. This can be used to understand what the correct disassembly is. **Users should always be wary of `if (true)` and `if (false)` tests as they usually hide a subtlety the decompiler is unable to recover.** Note that the affected code patterns are seen only in a few modules (e.g. `SceDisplay`) - this should not be an issue for most reverse engineering tasks.
+However, the assembly will now hold a reference to the import thunk, which can be used to figure out what the properly decompiled code should look like.
+**Users should always be wary of `if (true)` and `if (false)` tests as they usually hide a subtlety the decompiler is unable to recover.**
+Note that the affected code patterns are seen only in a few modules (e.g. `SceDisplay`), so this limitation should not be an issue for most reverse engineering tasks.
 
 #### Utility scripts
 Can be found in the *Script Manager* under the `Vita` category.
@@ -89,24 +94,28 @@ Can be found in the *Script Manager* under the `Vita` category.
 
 ## Installation
 Download the [latest release](https://github.com/CreepNT/VitaLoaderRedux/releases/latest) for the Ghidra version you use.
-Open Ghidra, select `File` > `Install Extensions...`, click on the green `+` and select the `.zip` you just downloaded.
-Restart Ghidra, as asked by a dialog that should appear.
+Open Ghidra, select `File` > `Install Extensions...`, click on the green `+` and select the `.zip` file you just downloaded.
+A dialog asking you to restart Ghidra should appear, do so in order to complete the installation.
 
 ## Updating
-Open Ghidra, select `File` > `Install Extensions...` and untick the checkbox next to `VitaLoaderRedux`.
+~~Open Ghidra, select `File` > `Install Extensions...` and untick the checkbox next to `VitaLoaderRedux`.~~ This step may be unnecessary.
 Close Ghidra and follow the [install instructions](#Installation) again.
 
 ## Building
-[Install Gradle](https://gradle.org/install/) then run `gradle` in a command prompt. Make sure to pass `-PGHIDRA_INSTALL_DIR=<path to Ghidra install>` if the environement variable `GHIDRA_INSTALL_DIR` isn't set.
+[Install Gradle](https://gradle.org/install/) then run `gradle` in a command prompt.
+Make sure to pass `-PGHIDRA_INSTALL_DIR=<path to Ghidra install>` if the environment variable `GHIDRA_INSTALL_DIR` is not set.
 
 **Building the extension for a version of Ghidra earlier than 10.3 is not supported.**
 
 ## Bug reports
 Please report any error encountered with Redux in the [Issues Tracker](https://github.com/CreepNT/VitaLoaderRedux/issues).
 
-Before submitting any bug report, update to the latest version of the extension. Make sure you are importing an ELF file **in PRX format** - regular ELF files are **not** supported.
-
-If you are not able to load a file (`ARM ELF-PRX for PlayStation®Vita` is not displayed in the `Executable Type` list), ***please verify that your executable is not malformed***.
+Before submitting any bug report:
+- Read this file **very carefully**!!!
+- Update to the latest version of the extension
+- Make sure you are importing an ELF file **in PRX format**
+  - Regular ELF files are **not** supported by this loader!
+- If you are not able to load a file (`ARM ELF-PRX for PlayStation®Vita` is not displayed in the `Executable Type` list): ***please verify that your executable is not malformed***.
 
 ### Known bugs
 None.
