@@ -6,10 +6,6 @@ import java.io.RandomAccessFile;
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.ByteProvider;
 import ghidra.app.util.bin.StructConverter;
-import ghidra.util.DataConverter;
-import ghidra.util.LittleEndianDataConverter;
-import ghidra.util.exception.DuplicateNameException;
-import vitaloaderredux.misc.Datatypes;
 import ghidra.app.util.bin.format.Writeable;
 import ghidra.app.util.bin.format.elf.ElfConstants;
 import ghidra.app.util.bin.format.elf.ElfProgramHeaderConstants;
@@ -21,6 +17,10 @@ import ghidra.program.model.data.EnumDataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.UnsignedIntegerDataType;
 import ghidra.program.model.data.UnsignedShortDataType;
+import ghidra.util.DataConverter;
+import ghidra.util.LittleEndianDataConverter;
+import ghidra.util.exception.DuplicateNameException;
+import vitaloaderredux.misc.Datatypes;
 
 public class ElfEhdr implements StructConverter, Writeable {
 	

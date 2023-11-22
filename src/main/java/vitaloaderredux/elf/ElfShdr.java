@@ -10,7 +10,6 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.EnumDataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.UnsignedIntegerDataType;
-
 import vitaloaderredux.misc.Datatypes;
 
 public class ElfShdr {

@@ -12,7 +12,6 @@ import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.data.VoidDataType;
 import ghidra.program.model.listing.Function;
-
 import vitaloaderredux.elf.MalformedElfException;
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
 import vitaloaderredux.misc.Datatypes;

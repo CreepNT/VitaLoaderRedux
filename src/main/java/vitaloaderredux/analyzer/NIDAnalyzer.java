@@ -221,9 +221,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				fileChooser.setFileFilter(yamlFilter);
 				fileChooser.setTitle("Choose the NID database file to use for this analysis");
 				fileChooser.setApproveButtonText("Use selected file");
-				fileChooser.setApproveButtonToolTipText(
-						"Use the selected file as the NID database file for this analysis");
-				// fileChooser.rescanCurrentDirectory();
+				fileChooser.setApproveButtonToolTipText("Use the selected file as the NID database file for this analysis");
 				databaseFile = fileChooser.getSelectedFile();
 				break;
 			}

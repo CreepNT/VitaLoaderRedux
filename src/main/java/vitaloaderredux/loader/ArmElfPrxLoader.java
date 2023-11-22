@@ -2,7 +2,9 @@ package vitaloaderredux.loader;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import ghidra.app.util.MemoryBlockUtils;
 import ghidra.app.util.Option;
@@ -26,7 +28,6 @@ import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.data.ByteDataType;
 import ghidra.program.model.data.DataType;
-
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Data;
@@ -39,14 +40,12 @@ import ghidra.util.MonitoredInputStream;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.task.TaskMonitor;
-
 import vitaloaderredux.elf.ElfEhdr;
 import vitaloaderredux.elf.ElfEhdr.ModInfoLocation;
 import vitaloaderredux.elf.ElfPhdr;
 import vitaloaderredux.elf.ElfShdr;
 import vitaloaderredux.elf.MalformedElfException;
 import vitaloaderredux.elf.UnsupportedElfException;
-
 import vitaloaderredux.misc.Datatypes;
 import vitaloaderredux.misc.HexOption;
 import vitaloaderredux.misc.ImportExportProperty;

@@ -7,14 +7,12 @@ import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.mem.MemoryBlock;
 import vitaloaderredux.elf.MalformedElfException;
-
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
-
 import vitaloaderredux.misc.BitfieldReader;
 import vitaloaderredux.misc.Datatypes;
-import vitaloaderredux.misc.Utils;
 import vitaloaderredux.misc.ImportExportProperty.IEKind;
 import vitaloaderredux.misc.ImportExportProperty.IEType;
+import vitaloaderredux.misc.Utils;
 
 public class ArmRelocator {
 

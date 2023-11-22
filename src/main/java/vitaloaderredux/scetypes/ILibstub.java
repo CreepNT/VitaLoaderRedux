@@ -5,14 +5,13 @@ import java.nio.IntBuffer;
 
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.program.model.address.Address;
-import ghidra.program.model.symbol.Namespace;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.TerminatedStringDataType;
 import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Function;
-
+import ghidra.program.model.symbol.Namespace;
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
 import vitaloaderredux.misc.Datatypes;
 import vitaloaderredux.misc.Utils;

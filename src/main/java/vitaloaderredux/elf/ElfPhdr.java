@@ -3,12 +3,12 @@ package vitaloaderredux.elf;
 import java.io.IOException;
 
 import ghidra.app.util.bin.BinaryReader;
+import ghidra.app.util.bin.format.elf.ElfProgramHeaderConstants;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.EnumDataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.UnsignedIntegerDataType;
 import vitaloaderredux.misc.Datatypes;
-import ghidra.app.util.bin.format.elf.ElfProgramHeaderConstants;
 
 public class ElfPhdr {
 	//TODO: verify only those exist

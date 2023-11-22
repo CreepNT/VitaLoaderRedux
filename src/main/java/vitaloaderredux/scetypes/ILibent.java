@@ -12,12 +12,11 @@ import ghidra.program.model.data.TerminatedStringDataType;
 import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.symbol.Namespace;
-
 import vitaloaderredux.elf.MalformedElfException;
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
 import vitaloaderredux.misc.Datatypes;
-import vitaloaderredux.misc.sdt_probedesc_t;
 import vitaloaderredux.misc.Utils;
+import vitaloaderredux.misc.sdt_probedesc_t;
 
 public abstract class ILibent {
 	// Library NID returned when it cannot be obtained.
