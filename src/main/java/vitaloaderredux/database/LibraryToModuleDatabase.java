@@ -31,7 +31,7 @@ public class LibraryToModuleDatabase {
 	 * 	- SceThreadmgr
 	 */
 	
-	private final String DATABASE_NAME = "databases/LibraryToModuleDatabase.yaml";
+	private final String DATABASE_NAME = "BuiltinLibraryToModuleDatabase.yaml";
 	private final Map<String, String> database;
 	
 	public LibraryToModuleDatabase(MessageLog logger) {

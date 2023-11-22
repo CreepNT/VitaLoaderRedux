@@ -26,7 +26,6 @@ import ghidra.util.exception.InvalidInputException;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
 import ghidra.util.task.TaskMonitor;
-
 import vitaloaderredux.database.NIDDatabase;
 import vitaloaderredux.loader.ArmElfPrxLoader;
 import vitaloaderredux.misc.ImportExportProperty;
@@ -46,7 +45,6 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			"Resolves the names of all imports and exports of this module."
 			+ "Names are extracted from a NID database in YAML format.";
 
-	static private final DatabaseKind DATABASE_CHOICE_DEFAULT = DatabaseKind.BuiltInDatabase;
 	static private final String DATABASE_CHOICE_NAME = "Database";
 	static private final String DATABASE_CHOICE_DESCRIPTION =
 			"Database from which names should be extracted for analysis";
@@ -56,20 +54,37 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	static private final String DELETE_OLD_OPTION_DESCRIPTION =
 			"If enabled, clears all names for imports and exports before analysis";
 
+	//Name of the environement variable that holds path to NID database
+	static private final String ENV_DATABASE_PATH_VARIABLE_NAME = "VLR_DATABASE_PATH";
 
-	static private final String BUILTIN_DEFAULT_DATABASE_FILENAME = "databases/DefaultNIDDatabase.yaml";
-	static private final String BUILTIN_SECONDARY_DATABASE_FILENAME = "databases/SecondaryNIDDatabase.yaml";
+	static private final String BUILTIN_DATABASE_FILENAME = "BuiltinNIDDatabase.yaml";
+	static private final String ENVIRONMENT_DATABASE_PATH = System.getenv(ENV_DATABASE_PATH_VARIABLE_NAME);
 
-	public static enum DatabaseKind {
-		BuiltInDatabase, BuiltInSecondaryDatabase, ExternalDatabase
+	static private DatabaseSource DATABASE_CHOICE_DEFAULT = DatabaseSource.Builtin;
+	
+	static { //Set environement source as default if available
+		if (ENVIRONMENT_DATABASE_PATH != null) {
+			File envDB = new File(ENVIRONMENT_DATABASE_PATH);
+			if (envDB.exists() && envDB.isFile()) {
+				DATABASE_CHOICE_DEFAULT = DatabaseSource.Environment;
+			}
+		}
+	}
+
+	//Must be public to allow Ghidra code to enumerate the class
+	public static enum DatabaseSource {
+		Builtin,	//Built-in database
+		External,	//User-provided database, chosen via File Picker dialog
+		Environment	//User-provided database, chosen via an environment variable
 	}
 
 	private NIDDatabase database;
 	private ProgramProcessingHelper helper;
 	
-	//Options
-	private DatabaseKind chosenDB = DATABASE_CHOICE_DEFAULT;
+	/* -------- Options --------*/
+	private DatabaseSource chosenDB = DATABASE_CHOICE_DEFAULT;
 	private boolean clearOldNames = true;
+	/* ------------------------ */
 	
 	public NIDAnalyzer() {
 		super(ANALYZER_TITLE, ANALYZER_DESCRIPTION, AnalyzerType.BYTE_ANALYZER);
@@ -190,7 +205,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		File databaseFile = null;
 		try {
 			switch (chosenDB) {
-			case ExternalDatabase: {
+			case External: {
 				GhidraFileFilter yamlFilter = new GhidraFileFilter() {
 					public String getDescription() {
 						return "NID database (.yml, .yaml)";
@@ -212,12 +227,12 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				databaseFile = fileChooser.getSelectedFile();
 				break;
 			}
-			case BuiltInDatabase: {
-				databaseFile = Application.getModuleDataFile(BUILTIN_DEFAULT_DATABASE_FILENAME).getFile(false);
+			case Builtin: {
+				databaseFile = Application.getModuleDataFile(BUILTIN_DATABASE_FILENAME).getFile(false);
 				break;
 			}
-			case BuiltInSecondaryDatabase: {
-				databaseFile = Application.getModuleDataFile(BUILTIN_SECONDARY_DATABASE_FILENAME).getFile(false);
+			case Environment: {
+				databaseFile = new File(ENVIRONMENT_DATABASE_PATH);
 				break;
 			}
 			default:

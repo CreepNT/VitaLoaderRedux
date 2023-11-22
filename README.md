@@ -28,14 +28,23 @@ Redux can be used in place of the ELF loader provided by Ghidra to load exectuab
 
 ### New features
 #### NID Analyzer
-Naming of imports and exports using a NID database is no longer performed at import time. Use the new `NID Resolution` analyzer instead. Analysis can be performed multiple times with different databases.
+Naming of imports and exports using a NID database is no longer performed at import time. Use the new `NID Resolution` analyzer instead. Analysis can be performed multiple times with different database files.
 
-The database used for analysis can be changed in the analyzer's settings in `Analysis > Auto Analyze '<program name>'`. The built-in databases are located in `%USERPROFILE%\.ghidra\<Ghidra version>\Extensions\VitaLoaderRedux\data\databases` and can be freely modified.
-- `DefaultNIDDatabase.yaml` is used by default by the analyzer (`BuiltinDatabase`)
-- `SecondaryNIDDatabase.yaml` can be selected by choosing `BuiltinSecondaryDatabase`
-- An arbitrary database file can be used by choosing `ExternalDatabase` 
+The database used for analysis can be changed in the analyzer's settings (`Analysis > Auto Analyze '<program name>'` and select `NID Resolution`).
 
-To apply NIDs from multiple databases successively, disable the `Clear old names` setting.
+The following database sources are available:
+- `Builtin` is a [curated database file](TODO) bundled with the extension
+  - Once the extension is installed, the file can be found at `%USERPROFILE%\.ghidra\<Ghidra version>\Extensions\VitaLoaderRedux\data`
+  - **This file is deleted when the VitaLoader Redux extension is uninstalled!**
+  - *At the moment, the built-in database is mostly empty.*
+- `External` is a database file chosen by the user via a file picker dialog
+- `Environment` is a database file chosen by the user via an environment variable
+  - Set the `VLR_DATABASE_PATH` environment variable to the path of the file you wish to use as a NID database to enable this source
+  - **If the environment variable is not set or contains an invalid path, this database source will not be displayed**
+
+The default database source is `Environment` if available, and `Builtin` otherwise.
+
+To apply NIDs from multiple databases successively, untick the `Clear old names` setting.
 
 #### Variable import relocation
 Variable imports are now supported and handled properly ! This also applies to function-as-variable imports. A special memory block is created to "store" all imported variables. The relocations associated to them are applied 
