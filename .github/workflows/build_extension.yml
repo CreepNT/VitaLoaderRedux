@@ -13,8 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        #108785380 is Ghidra 10.3.1, 111929518 is Ghidra 10.3.2
-        ghidra-release-id: [ "108785380", "111929518" , "latest" ]
+        #108785380 is Ghidra 10.3.1, 111929518 is Ghidra 10.3.2, 123122126 is Ghidra 10.4
+        ghidra-release-id: [ "108785380", "111929518" , "123122126", "latest" ]
 
     env:
       GHIDRA_RELEASE_ID: ${{ matrix.ghidra-release-id }}
