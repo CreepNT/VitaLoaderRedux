@@ -13,12 +13,10 @@ jobs:
     strategy:
       matrix:
         ghidra:
-          - "11.0"
+          - "11.1.2"
+          - "11.0.3"
           - "10.4"
           - "10.3.3"
-          - "10.3.2"
-          - "10.3.1"
-          - "10.3"
 
     steps:
     - uses: actions/checkout@v4
@@ -30,13 +28,13 @@ jobs:
         java-version: '17'
 
     - name: Install Ghidra
-      uses: antoniovazquezblanco/setup-ghidra@v1.2.0
+      uses: antoniovazquezblanco/setup-ghidra@v2.0.5
       with:
         auth_token: ${{ secrets.GITHUB_TOKEN }}
         version: ${{ matrix.ghidra }}
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2.11.1
+      uses: gradle/actions/setup-gradle@v3
 
     - name: Update extension properties
       run: |
