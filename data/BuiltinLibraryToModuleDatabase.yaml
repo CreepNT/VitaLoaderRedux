@@ -1,3 +1,75 @@
+##############
+# Pd modules #
+##############
+
+scePdAudio.skprx:
+   - ScePdAudio
+
+scePdCamera.skprx:
+   - ScePdCamera
+
+scePdCtrl.skprx:
+   - ScePdCtrl
+   - ScePdCtrlForDriver
+
+scePdDisplay.skprx:
+   - ScePdDisplay
+   - ScePdDisplayForDriver
+
+scePdDisplayOled.skprx:
+   - ScePdDisplayOled
+   - ScePdDisplayOledForDriver
+
+#Guessed module name, as it has not been found yet
+scePdEthernet.skprx:
+   - ScePdEthernet
+
+scePdHdmi.skprx:
+   - ScePdHdmi
+   - ScePdHdmiForDriver
+
+scePdIdStorage.skprx:
+   - ScePdIdStorage
+
+scePdLed.skprx:
+   - ScePdLed
+
+scePdMotion.skprx:
+   - ScePdMotion
+   - ScePdMotionForDriver
+
+scePdMsif.skprx:
+   - ScePdMsif
+
+scePdPower.skprx:
+   - ScePdPower
+
+scePdSdif.skprx:
+   - ScePdSdif
+
+scePdSyscon.skprx:
+   - ScePdSyscon
+
+scePdTouch.skprx:
+   - ScePdTouch
+
+scePdUart.skprx:
+   - ScePdUart
+   - ScePdUartForDriver
+
+scePdUdcdEval.skprx:
+   - ScePdUdcdEval
+
+scePdUdcdMotion.skprx:
+   - ScePdUdcdMotion
+
+scePdUdcdSerial.skprx:
+   - ScePdUdcdSerial
+
+scePdWlanBtLab.skprx:
+   - ScePdWlanBtLab
+   - ScePdWlanBtLabForDriver
+
 #########
 # NSKBL #
 #########
