@@ -39,7 +39,7 @@ jobs:
     - name: Update extension properties
       run: |
         echo "name=@extname@" > extension.properties
-        echo "description=PlayStation®Vita ELF-PRX loader for Ghidra" >> extension.properties
+        echo "description=PlayStation(R)Vita ELF-PRX loader for Ghidra" >> extension.properties
         echo "author=CreepNT" >> extension.properties
         date +"createdOn=%Y/%m/%d" >> extension.properties
         echo "version=@extversion@" >> extension.properties
