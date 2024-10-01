@@ -403,8 +403,7 @@ sdif.skprx:
    - SceSdifForDriver
 
 sm_comm.skprx:
-   - SceSblSsSmComm
-   - SceSblSsSmCommForKernel
+   - SceSblSmCommForKernel
 
 smsc_proxy.skprx:
    - SceSblSmSchedProxyForKernel
