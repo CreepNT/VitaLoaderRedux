@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
+import ghidra.app.cmd.function.CreateFunctionCmd;
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.MemoryByteProvider;
 import ghidra.program.flatapi.FlatProgramAPI;
@@ -142,11 +143,13 @@ public class ProgramProcessingHelper {
 		
 		Function f = funcMgr.getFunctionAt(funcAddr);
 		if (f == null) {
-			f = funcMgr.createFunction(name, funcAddr,
-					(isThumb
-					? new AddressSet(funcAddr, funcAddr.add(1))
-					: new AddressSet(funcAddr, funcAddr.add(3))), SourceType.ANALYSIS);
+			boolean createOk = new CreateFunctionCmd(
+					name, funcAddr,
+					null, SourceType.ANALYSIS
+			).applyTo(program);
+			assert(createOk);
 			
+			f = funcMgr.getFunctionAt(funcAddr);
 			setTModeAtAddress(funcAddr, isThumb);
 		} else {
 			flatAPI.createLabel(funcAddr, name, false);
