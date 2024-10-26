@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         ghidra:
+          - "11.2"
           - "11.1.2"
           - "11.0.3"
           - "10.4"
@@ -21,11 +22,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up JDK 17
+    - name: Set up JDK
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: ${{ matrix.ghidra <= '11.1.2' && '17' || '21' }}
 
     - name: Install Ghidra
       uses: antoniovazquezblanco/setup-ghidra@v2.0.5
