@@ -14,12 +14,12 @@ import vitaloaderredux.misc.Utils;
 //Form 2 reference information (used in reftables)
 public class Prx2RefInfoForm2 implements StructConverter {
 	static public final int SIZE = 12;
-	
+
 	public final int segment;
 	public final int offset;
 	public final int addend;
 	public final int reltype;
-	
+
 	public DataType toDataType() {
 		StructureDataType dt = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "Prx2RefInfoForm2", 0);
 		dt.setPackingEnabled(true);
@@ -31,28 +31,28 @@ public class Prx2RefInfoForm2 implements StructConverter {
 		} catch (InvalidDataTypeException e) {
 			throw new RuntimeException(e);
 		}
-		
+
 		dt.add(Datatypes.u32, "addend", "Relocation addend (r_addend)");
 		dt.add(Datatypes.u32, "offset", "Offset where reference lies in segment (r_offset)");
-		
+
 		Utils.assertStructureSize(dt, SIZE);
 		return dt;
 	}
-	
+
 	public Prx2RefInfoForm2(BinaryReader reader) throws IOException {
 		BitfieldReader bfr = new BitfieldReader(reader.readNextShort());
 		reader.readNextShort(); //16 unused bits
-		
+
 		int form = bfr.consume(4);
 		if (form != 2) {
 			throw new IllegalArgumentException("Binary reader doesn't point to a form 2 RefInfo");
 		}
-		
+
 		segment = bfr.consume(4);
 		reltype = bfr.consume(8);
 		addend = reader.readNextInt();
 		offset = reader.readNextInt();
-		
+
 		bfr.assertFullConsumption("Prx2RefInfoForm2");
 		Utils.assertBRSize("Prx2RefInfoForm2", reader, SIZE);
 	}

@@ -24,12 +24,12 @@ public abstract class ILibent {
 	// however the chances of this happening as so small this
 	// that this will Probably Never� cause any problem.
 	public static final int UNKNOWN_NID = 0xFFFFFFFF;
-	
+
 	protected abstract String _structureName();
 
 	protected final DataType _getCommonDataType(DataType libAttrType, boolean newname) {
 		final DataType ubyte = Datatypes.u8, ushort = Datatypes.u16;
-				
+
 		StructureDataType common = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryEntryTable_ppu_common", 0);
 		common.add(ubyte, "structsize", "Size of this structure");
 		common.add(Datatypes.makeArray(ubyte, 1), "reserved1", "");
@@ -42,14 +42,14 @@ public abstract class ILibent {
 		common.add(ubyte, "hashinfotls", "TLS hash info");
 		common.add(Datatypes.makeArray(ubyte, 1), "reserved2", "");
 		common.add(ubyte, "nidaltsets", "");
-		
+
 		if (!newname) {
 			return common;
 		}
-		
+
 		return new TypedefDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryEntryTable_prx2_common", common);
 	}
-	
+
 	protected byte auxattribute;
 	protected int version;
 	protected int attribute;
@@ -132,13 +132,13 @@ public abstract class ILibent {
 	//For thread parameter processing
 	private int module_start_va = 0, module_stop_va = 0;
 	private int module_start_thread_parameter_va = 0, module_stop_thread_parameter_va = 0;
-	
+
 	private void processStaticProbes() throws Exception {
 		int probes_count = 0;
 		{
 			/*
 			 * module_dtrace_probes_info is:
-			 * 
+			 *
 			 * typedef struct sdt_probes_info { unsigned int version; unsigned int count; }
 			 * sdt_probes_info_t;
 			 */
@@ -196,13 +196,13 @@ public abstract class ILibent {
 
 		ctx.logger.appendMsg("module defines " + probes_count + " static probes");
 	}
-	
+
 	private boolean processThreadParameter(String name, int mtpVA, int epVA) throws Exception {
 		if (mtpVA != 0) {
 			Address mtpAddr = ctx.getAddressInDefaultAS(mtpVA);
 			SceModuleThreadParameter mtp = new SceModuleThreadParameter(ctx.getBinaryReader(mtpAddr), name);
 			mtp.process(ctx, mtpAddr);
-			
+
 			if (epVA == 0) {
 				ctx.logf("Module has sce_%s_thread_parameter but no %s function!", name, name);
 			} else {
@@ -212,19 +212,19 @@ public abstract class ILibent {
 		}
 		return false;
 	}
-	
+
 	private void processThreadParameters() throws Exception {
 		boolean hasThreadParameter = false;
 		hasThreadParameter |= processThreadParameter("module_start", module_start_thread_parameter_va, module_start_va);
 		hasThreadParameter |= processThreadParameter("module_stop", module_stop_thread_parameter_va, module_stop_va);
-		
+
 		//Only .suprx should have thread parameters, because it is ignored
 		//for .skprx, and .self has dedicated (xxxMainThread) settings instead.
 		if (hasThreadParameter) {
 			ctx.setFileKind(ArmElfPrxLoaderContext.FILE_KIND_USERMOD);
 		}
 	}
-	
+
 	private void processMAINEXPORTVariable(int nid, int va) throws Exception {
 		final Address varAddr = ctx.getAddressInDefaultAS(va);
 
@@ -264,7 +264,7 @@ public abstract class ILibent {
 	private static final int module_proc_exit_NID = 0x4F0EE5BD;
 	private static final int module_proc_kill_NID = 0xDF0212B9;
 	private static final int module_suspend_NID = 0xDD42FA37;
-	
+
 	private static final Map<Integer, String> MAINEXPORT_lib_NID_to_function_name_map = Map.of(
 			module_start_NID, "module_start",
 			module_stop_NID, "module_stop",
@@ -275,12 +275,12 @@ public abstract class ILibent {
 			module_proc_kill_NID, "module_proc_kill",
 			module_suspend_NID, "module_suspend"
 	);
-	
+
 	private FunctionDefinitionDataType getMAINEXPORTFunctionSignature(int nid) {
 		DataType u32 = Datatypes.u32;
 		DataType s32 = Datatypes.s32;
 		DataType ptr = Datatypes.ptr;
-		
+
 		FunctionDefinitionDataType dt = null;
 		switch(nid) {
 		case module_start_NID:
@@ -316,10 +316,10 @@ public abstract class ILibent {
 					s32, "module_suspend");
 			break;
 		}
-		
+
 		return dt;
 	}
-	
+
 	private void processMAINEXPORTFunction(int funcNID, int funcVA) throws Exception {
 		String name = MAINEXPORT_lib_NID_to_function_name_map.get(funcNID);
 		if (name == null) {
@@ -328,7 +328,7 @@ public abstract class ILibent {
 				processMAINEXPORTVariable(funcNID, funcVA);
 				return;
 			}
-			
+
 			ctx.logf("Found MAINEXPORT function with non-existent NID 0x%08X - skipped.", funcNID);
 			return;
 		}
@@ -336,23 +336,23 @@ public abstract class ILibent {
 		Address funcAddr = ctx.getAddressInDefaultAS(funcVA & ~1); // Clear Thumb bit
 		Function func = ctx.markupFunction(name, funcVA, null);
 		ctx.symTbl.addExternalEntryPoint(funcAddr);
-		
+
 		FunctionDefinitionDataType signature = getMAINEXPORTFunctionSignature(funcNID);
 		if (signature != null) {
 			ctx.setFunctionSignature(func, signature);
 		}
-		
-		
+
+
 		//Stash module_start and module_stop VA for thread parameters markup
 		if (funcNID == module_start_NID)
 			module_start_va = funcVA;
 		else if (funcNID == module_stop_NID)
 			module_stop_va = funcVA;
 	}
-	
+
 	private void processMAINEXPORTLibrary(Address libentAddress) throws Exception {
 		ctx.monitor.checkCancelled();
-		
+
 		// (1) Prepare library name and namespace
 		libraryName = "NONAME";
 		libraryNS = ctx.moduleNamespace;
@@ -382,7 +382,7 @@ public abstract class ILibent {
 			final int funcNID = nidTable.get(i), funcVA = entTable.get(i);
 			processMAINEXPORTFunction(funcNID, funcVA);
 		}
-		
+
 		for (int i = nfunc; i < nExports; i++) {
 			ctx.monitor.checkCancelled();
 			final int varNID = nidTable.get(i), varVA = entTable.get(i);
@@ -397,7 +397,7 @@ public abstract class ILibent {
 		} else if (dtrace_probes_va != 0 && dtrace_probes_info_va != 0) {
 			processStaticProbes();
 		}
-		
+
 		//Process thread parameters after all variables have been processed too
 		processThreadParameters();
 	}

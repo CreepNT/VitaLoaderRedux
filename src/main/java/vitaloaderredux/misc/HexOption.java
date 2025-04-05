@@ -7,26 +7,26 @@ import docking.widgets.textfield.IntegerTextField;
 import ghidra.app.util.Option;
 
 /**
- * 
+ *
  * Option for an Hexadecimal integer
  */
 public class HexOption extends Option {
 		public HexOption(String name, long value) {
 			this(null, name, value);
 		}
-		
+
 		public HexOption(String group, String name, long value) {
 			this(name, value, null, group);
 		}
-		
+
 		public HexOption(String group, String name, long value, String arg) {
 			this(name, value, group, arg);
 		}
-		
+
 		public HexOption(String name, long value, String arg, String group) {
 			super(name, Long.class, value, arg, group);
 		}
-		
+
 		@Override
 		public Component getCustomEditorComponent() {
 			IntegerTextField field = new IntegerTextField();
@@ -46,11 +46,11 @@ public class HexOption extends Option {
 			});
 			return field.getComponent();
 		}
-		
+
 		@Override
 		public Option copy() {
 			return new HexOption(getName(), (long)getValue(), getArg(), getGroup());
 		}
-		
+
 
 	}

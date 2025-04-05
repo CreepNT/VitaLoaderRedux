@@ -61,7 +61,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	static private final String ENVIRONMENT_DATABASE_PATH = System.getenv(ENV_DATABASE_PATH_VARIABLE_NAME);
 
 	static private DatabaseSource DATABASE_CHOICE_DEFAULT = DatabaseSource.Builtin;
-	
+
 	static { //Set environement source as default if available
 		if (ENVIRONMENT_DATABASE_PATH != null) {
 			File envDB = new File(ENVIRONMENT_DATABASE_PATH);
@@ -80,12 +80,12 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 	private NIDDatabase database;
 	private ProgramProcessingHelper helper;
-	
+
 	/* -------- Options --------*/
 	private DatabaseSource chosenDB = DATABASE_CHOICE_DEFAULT;
 	private boolean clearOldNames = true;
 	/* ------------------------ */
-	
+
 	public NIDAnalyzer() {
 		super(ANALYZER_TITLE, ANALYZER_DESCRIPTION, AnalyzerType.BYTE_ANALYZER);
 
@@ -142,32 +142,32 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		}
 		return seenBefore;
 	}
-	
+
 	private void analyzeFunction(IEType importOrExport, String libraryName, Address funcAddr, int functionNID) {
 		final String databaseName = database.getFunctionName(libraryName, functionNID);
 		final boolean functionSeenBefore = checkAndSetKnownAddress(knownFunctionsList, funcAddr);
 		if (clearOldNames && !functionSeenBefore) {
 			deleteNonSystematicNamedSymbols(funcAddr, libraryName, true);
 		}
-		
+
 		if (databaseName != null) {
 			// Replace the current name of the function with the DB's name
 			// and add back the overwritten name as a symbol.
-			Function func = helper.funcMgr.getFunctionAt(funcAddr);			
+			Function func = helper.funcMgr.getFunctionAt(funcAddr);
 			String oldName = func.getName(false);
-			
+
 			try {
 				//Under certain circumstances, the import thunk may find itself
 				//in the External namespace, which leads to duplicates in program tree.
 				//Put the function in global namespace to prevent this from happening.
 				func.setParentNamespace(helper.program.getGlobalNamespace());
-				
+
 				func.setName(databaseName, SourceType.ANALYSIS);
 				if (importOrExport == IEType.IMPORT) {
 					//Set name for the thunk too
 					func.getThunkedFunction(true).setName(databaseName, SourceType.ANALYSIS);
 				}
-				
+
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
 			} catch (DuplicateNameException | InvalidInputException | CircularDependencyException e) {
 				System.err.println(e);
@@ -189,7 +189,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			try {
 				helper.flatAPI.createLabel(varAddr, databaseName, /* Global Namespace */null, true, SourceType.ANALYSIS);
 			} catch (Exception e) {
-				
+
 			}
 		}
 	}
@@ -201,7 +201,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		helper = new ProgramProcessingHelper(program);
 		knownFunctionsList = new ArrayList<Long>();
 		knownVariablesList = new ArrayList<Long>();
-		
+
 		File databaseFile = null;
 		try {
 			switch (chosenDB) {
@@ -253,7 +253,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			log.appendException(e);
 			return false;
 		}
-		
+
 		ObjectPropertyMap<ImportExportProperty> iepMap = ArmElfPrxLoader.getImportExportPropertyMap(program);
 
 		try {

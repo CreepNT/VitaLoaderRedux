@@ -21,7 +21,7 @@ public class LibcAllocReplacement {
 	static public final int SIZE = 0x34;
 	static public final String STRUCTURE_NAME = "SceLibcAllocReplacement";
 	static public final CategoryPath LIBC_ALLOC_REPLACE_CATPATH = new CategoryPath(Datatypes.SCE_LIBC_TYPES_CATPATH, "libcallocreplace");
-	
+
 	public final int unk4;
 	public final int user_malloc_init;
 	public final int user_malloc_finalize;
@@ -34,13 +34,13 @@ public class LibcAllocReplacement {
 	public final int user_malloc_stats;
 	public final int user_malloc_stats_fast;
 	public final int user_malloc_usable_size;
-	
+
 	public LibcAllocReplacement(BinaryReader reader) throws IOException {
 		final int size = reader.readNextInt();
 		if (size != SIZE) {
 			throw new MalformedElfException(String.format("Invalid LibcAllocReplacement size (0x%X != 0x%X)", size, SIZE));
 		}
-		
+
 		unk4 = reader.readNextInt();
 		user_malloc_init = reader.readNextInt();
 		user_malloc_finalize = reader.readNextInt();
@@ -53,30 +53,30 @@ public class LibcAllocReplacement {
 		user_malloc_stats = reader.readNextInt();
 		user_malloc_stats_fast = reader.readNextInt();
 		user_malloc_usable_size = reader.readNextInt();
-		
+
 		Utils.assertBRSize(STRUCTURE_NAME, reader, size);
 	}
-	
+
 	private FunctionDefinitionDataType
 		F_user_malloc_init, F_user_malloc_finalize, F_user_malloc, F_user_free,
 		F_user_calloc, F_user_realloc, F_user_memalign, F_user_reallocalign,
 		F_user_malloc_stats, F_user_malloc_stats_fast, F_user_malloc_usable_size;
-	
+
 	@SafeVarargs
 	private FunctionDefinitionDataType func(DataType returnType, String name, Map.Entry<DataType, String>... args) {
 		return Datatypes.createFunctionDT(LIBC_ALLOC_REPLACE_CATPATH, returnType, name, args);
 	}
-	
+
 	private void __create_funcdef_dt() {
 		if (F_user_malloc_init == null) {
 			//Local declarations for convenience
 			final DataType size_t = new TypedefDataType("size_t", Datatypes.u32);
 			final DataType sint = Datatypes.s32;
 			final DataType VOID = VoidDataType.dataType;
-			
+
 			//Using void* instead of Pointer32DataType results in better decompilation.
 			final DataType pVoid = new Pointer32DataType(VOID);
-			
+
 			//Create malloc_managed_size struct
 			StructureDataType mmsize = new StructureDataType(LIBC_ALLOC_REPLACE_CATPATH, "malloc_managed_size", 8 * 4);
 			mmsize.add(size_t, "max_system_size", null);
@@ -85,24 +85,24 @@ public class LibcAllocReplacement {
 			mmsize.add(size_t, "current_inuse_size", null);
 			mmsize.add(Datatypes.makeArray(size_t, 4), "reserved", "Reserved area");
 			DataType pmmsize = new Pointer32DataType(mmsize);
-			
+
 			//Create function signatures
 			F_user_malloc_init 		= func(VOID, "user_malloc_init");
 			F_user_malloc_finalize 	= func(VOID, "user_malloc_finalize");
 			F_user_malloc 			= func(pVoid, "user_malloc", Map.entry(size_t, "size"));
 			F_user_free 			= func(VOID, "user_free", Map.entry(pVoid, "size"));
-			
+
 			F_user_calloc 		= func(pVoid, "user_calloc", Map.entry(size_t, "nelem"), Map.entry(size_t, "size"));
 			F_user_realloc 		= func(pVoid, "user_realloc", Map.entry(pVoid, "ptr"), Map.entry(size_t, "size"));
 			F_user_memalign 	= func(pVoid, "user_memalign", Map.entry(size_t, "boundary"), Map.entry(size_t, "size"));
 			F_user_reallocalign = func(pVoid, "user_reallocalign", Map.entry(pVoid, "ptr"), Map.entry(size_t, "size"), Map.entry(size_t, "boundary"));
-			
+
 			F_user_malloc_stats			= func(sint, "user_malloc_stats", Map.entry(pmmsize, "mmsize"));
 			F_user_malloc_stats_fast 	= func(sint, "user_malloc_stats_fast", Map.entry(pmmsize, "mmsize"));
 			F_user_malloc_usable_size 	= func(size_t, "user_malloc_usable_size", Map.entry(pVoid, "ptr"));
 		}
 	}
-	
+
 	public DataType toDataType() {
 		__create_funcdef_dt();
 		StructureDataType dt = new StructureDataType(Datatypes.SCE_LIBC_TYPES_CATPATH, STRUCTURE_NAME, 0);
@@ -119,25 +119,25 @@ public class LibcAllocReplacement {
 		dt.add(new Pointer32DataType(F_user_malloc_stats), "user_malloc_stats", "memory statistics query function");
 		dt.add(new Pointer32DataType(F_user_malloc_stats_fast), "user_malloc_stats_fast", "fast memory statistics query function");
 		dt.add(new Pointer32DataType(F_user_malloc_usable_size), "user_malloc_usable_size", "allocation size query function");
-		
+
 		Utils.assertStructureSize(dt, SIZE);
 		return dt;
 	}
-	
+
 	private interface MarkupIF {
 		void markup(int va, String name, FunctionDefinitionDataType sig) throws Exception;
 	}
-	
+
 	public void process(ArmElfPrxLoaderContext ctx) throws Exception {
 		__create_funcdef_dt();
-		
+
 		MarkupIF mif = (va, name, sig) -> {
 			if (va != 0) {
 				Function f = ctx.markupFunction(name, va, "libc replacement function: " + name);
 				ctx.setFunctionSignature(f, sig);
 			}
 		};
-		
+
 		//Markup functions
 		mif.markup(user_malloc_init, "user_malloc_init", F_user_malloc_init);
 		mif.markup(user_malloc_finalize, "user_malloc_finalize", F_user_malloc_finalize);

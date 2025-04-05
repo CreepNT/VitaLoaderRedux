@@ -59,9 +59,9 @@ public class ImportExportProperty implements Saveable, ExtensionPoint {
 	public int getNID() { return NID; }
 	public IEType getType() { return type; }
 	public IEKind getKind() { return kind; }
-	
+
 	public ImportExportProperty() {}
-	
+
 	//As an optimization, we may want to store the VA of the library name instead of the name itself.
 	//Although, even in the worse scenario of ~400 imports/exports per file, knowing each library name
 	//takes up to 27 bytes, this shouldn't consume more than a few KBs.

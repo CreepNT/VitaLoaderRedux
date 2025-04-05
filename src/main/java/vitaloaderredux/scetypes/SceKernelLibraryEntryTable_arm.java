@@ -13,16 +13,16 @@ import vitaloaderredux.misc.Utils;
 public class SceKernelLibraryEntryTable_arm extends ILibent {
 	public static final String STRUCTURE_NAME = "sceKernelLibraryEntryTable_arm"; //Technically a typedef... heh.
 	public static final int SIZE = 0x1C;
-	
+
 	@Override
 	protected String _structureName() { return STRUCTURE_NAME; }
-	
+
 	public SceKernelLibraryEntryTable_arm(BinaryReader reader) throws IOException {
 		final int structureSize = reader.readNextByte();
 		if (structureSize != SIZE) {
 			throw new MalformedElfException(String.format("Invalid Libent size! (0x%X != 0x%X)", structureSize, SIZE));
 		}
-		
+
 		auxattribute = reader.readNextByte();
 		version = reader.readNextUnsignedShort();
 		attribute = reader.readNextUnsignedShort();
@@ -33,13 +33,13 @@ public class SceKernelLibraryEntryTable_arm extends ILibent {
 		hashinfotls = reader.readNextByte();
 		reader.readNextByte(); //reserved2
 		nidaltsets = reader.readNextByte();
-		
+
 		libname_nid = ILibent.UNKNOWN_NID; //See SceKernelLibraryStubTable_arm for the rationale.
 		libname = reader.readNextInt();
-		
+
 		nidtable = reader.readNextInt();
 		addtable = reader.readNextInt();
-		
+
 		Utils.assertBRSize(STRUCTURE_NAME, reader, SIZE);
 	}
 
@@ -51,7 +51,7 @@ public class SceKernelLibraryEntryTable_arm extends ILibent {
 			DATATYPE.add(Datatypes.stringptr, "libname", "Pointer to library's name");
 			DATATYPE.add(Datatypes.u32ptr, "nidtable", "Pointer to library's NID table");
 			DATATYPE.add(Datatypes.ptr_to_ptr, "addtable", "Pointer to library's address table");
-			
+
 			Utils.assertStructureSize(DATATYPE, SIZE);
 		}
 		return DATATYPE;
