@@ -13,37 +13,37 @@ import vitaloaderredux.misc.Utils;
 public class SceKernelLibraryStubTable_0x24 extends ILibstub {
 	public static final String STRUCTURE_NAME = "SceLibstub_0x24";
 	public static final int SIZE = 0x24;
-	
+
 	@Override
 	protected String _structureName() { return STRUCTURE_NAME; }
-	
+
 	public SceKernelLibraryStubTable_0x24(BinaryReader reader) throws IOException {
 		final int size = reader.readNextUnsignedByte();
 		if (size != SIZE) {
 			throw new MalformedElfException(String.format("Invalid Libstub size (0x%X != 0x%X)", size, SIZE));
 		}
-		
+
 		reader.readNextUnsignedByte(); //reserved1
-		
-		
-		
+
+
+
 		version = reader.readNextUnsignedShort();
-		
+
 		attribute = reader.readNextUnsignedShort();
-		
+
 		nfunc = reader.readNextUnsignedShort();
 		nvar = reader.readNextUnsignedShort();
 		ntlsvar = reader.readNextUnsignedShort();
-		
+
 		libname_nid = reader.readNextInt();
 		libname = reader.readNextInt();
-		
+
 		func_nidtable = reader.readNextInt();
 		func_table = reader.readNextInt();
-		
+
 		var_nidtable = reader.readNextInt();
 		var_table = reader.readNextInt();
-		
+
 		Utils.assertBRSize(STRUCTURE_NAME, reader, size);
 	}
 
@@ -53,19 +53,19 @@ public class SceKernelLibraryStubTable_0x24 extends ILibstub {
 	public int getTLSVariablesEntryTableAddress() {
 		if (ntlsvar == 0)
 			return 0;
-		
+
 		return var_table + 4 * nvar;
 	}
-	
+
 	@Override
 	public int getTLSVariablesNIDTableAddress() {
 		if (ntlsvar == 0)
 			return 0;
-		
+
 		return var_nidtable + 4 * nvar;
 	}
-	
-	
+
+
 	@Override
 	public DataType toDataType(DataType libraryAttributesType) {
 		if (DATATYPE == null) {
@@ -83,7 +83,7 @@ public class SceKernelLibraryStubTable_0x24 extends ILibstub {
 			DATATYPE.add(Datatypes.ptr_to_ptr, "func_table", "Pointer to functions table");
 			DATATYPE.add(Datatypes.u32ptr, "var_nidtable", "Pointer to variables NID table");
 			DATATYPE.add(Datatypes.ptr_to_ptr, "var_table", "Pointer to variables table");
-			
+
 			Utils.assertStructureSize(DATATYPE, SIZE);
 		}
 		return DATATYPE;

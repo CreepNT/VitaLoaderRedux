@@ -24,7 +24,7 @@ import vitaloaderredux.loader.ArmElfPrxLoaderContext;
 public class sdt_probedesc_t {
 	static public final String STRUCTURE_NAME = "sdt_probedesc_t";
 	static private final String PROBE_BOOKMARK_CATEGORY_NAME = "Static Probe Instrumentation Point";
-	
+
 	public final int sdpd_id;
 	public final int sdpd_provider; // pointer
 	public final int sdpd_name; // pointer
@@ -120,7 +120,7 @@ public class sdt_probedesc_t {
 			String comment = makePlateComment();
 			comment += "Probe " + name + " helper function";
 			Function f = ctx.markupFunction(providerName + probeName + "_" + name + "_fn", va, comment);
-			
+
 			// If only you could do Function.setSignature(FunctionDefinitionDataType dt)...
 			Variable[] arg = new Variable[1];
 			arg[0] = new ParameterImpl("desc", new Pointer32DataType(this.toDataType()), ctx.program);
@@ -168,7 +168,7 @@ public class sdt_probedesc_t {
 					instrumentationPointAddr, BookmarkType.ANALYSIS, PROBE_BOOKMARK_CATEGORY_NAME,
 					providerName + probeName + " instrumentation point"
 			);
-			
+
 			String comment = makePlateComment();
 			comment += "Probe instrumentation point";
 			ctx.listing.setComment(instrumentationPointAddr, CodeUnit.PLATE_COMMENT, comment);

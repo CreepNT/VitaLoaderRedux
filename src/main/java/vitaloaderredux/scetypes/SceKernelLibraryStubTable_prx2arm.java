@@ -13,17 +13,17 @@ import vitaloaderredux.misc.Utils;
 public class SceKernelLibraryStubTable_prx2arm extends ILibstub {
 	public static final String STRUCTURE_NAME = "sceKernelLibraryStubTable_prx2arm";
 	public static final int SIZE = 0x34;
-	
+
 	@Override
 	protected String _structureName() { return STRUCTURE_NAME; }
 
-	
+
 	public SceKernelLibraryStubTable_prx2arm(BinaryReader reader) throws IOException {
 		final int structureSize = reader.readNextUnsignedShort();
 		if (structureSize != SIZE) {
 			throw new MalformedElfException(String.format("Invalid Libstub size (0x%X != 0x%X)", structureSize, SIZE));
 		}
-		
+
 		version = reader.readNextUnsignedShort();
 		attribute = reader.readNextUnsignedShort();
 		nfunc = reader.readNextUnsignedShort();
@@ -39,10 +39,10 @@ public class SceKernelLibraryStubTable_prx2arm extends ILibstub {
 		var_table = reader.readNextInt();
 		tls_nidtable = reader.readNextInt();
 		tls_table = reader.readNextInt();
-		
+
 		Utils.assertBRSize(STRUCTURE_NAME, reader, SIZE);
 	}
-	
+
 //ILibstub
 	@Override
 	public DataType toDataType(DataType libraryAttributesType) {
@@ -58,7 +58,7 @@ public class SceKernelLibraryStubTable_prx2arm extends ILibstub {
 			DATATYPE.add(Datatypes.ptr_to_ptr, "var_table", "Pointer to variables table");
 			DATATYPE.add(Datatypes.u32ptr, "tls_nidtable", "Pointer to TLS variables NID table");
 			DATATYPE.add(Datatypes.ptr_to_ptr, "tls_table", "Pointer to TLS variables entry table");
-			
+
 			Utils.assertStructureSize(DATATYPE, SIZE);
 		}
 		return DATATYPE;

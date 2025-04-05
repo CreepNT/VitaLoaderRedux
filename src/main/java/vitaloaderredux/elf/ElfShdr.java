@@ -40,7 +40,7 @@ public class ElfShdr {
 		//TODO: add SCE section header types
 		return dt;
 	}
-	
+
 	/**
 	 * @return DataType for the sh_flags field
 	 */
@@ -49,7 +49,7 @@ public class ElfShdr {
 		dt.add("SHF_WRITE", ElfSectionHeaderConstants.SHF_WRITE, "Writable section");
 		dt.add("SHF_ALLOC", ElfSectionHeaderConstants.SHF_ALLOC, "Section occupies memory during execution");
 		dt.add("SHF_EXECINSTR", ElfSectionHeaderConstants.SHF_EXECINSTR, "Executable section");
-		
+
 		dt.add("SHF_MERGE", ElfSectionHeaderConstants.SHF_MERGE, "Section might be merged");
 		dt.add("SHF_STRINGS", ElfSectionHeaderConstants.SHF_STRINGS, "Section contains NUL-terminated strings");
 		dt.add("SHF_INFO_LINK", ElfSectionHeaderConstants.SHF_INFO_LINK, "sh_info holds an SHT index");
@@ -60,11 +60,11 @@ public class ElfShdr {
 		dt.add("SHF_COMPRESSED", ElfSectionHeaderConstants.SHF_COMPRESSED, "Section is compressed");
 		return dt;
 	}
-	
+
 	static public DataType getDataType() {
 		if (SHDR_DATATYPE == null) {
 			DataType uint = UnsignedIntegerDataType.dataType;
-			
+
 			//TODO: make sh_flags a EnumDataType as well
 			SHDR_DATATYPE = new StructureDataType(ELF_CATPATH, "Elf32_Shdr", 0);
 			SHDR_DATATYPE.add(uint, "sh_name", "");
@@ -81,7 +81,7 @@ public class ElfShdr {
 		return SHDR_DATATYPE;
 	}
 	static StructureDataType SHDR_DATATYPE = null;
-	
+
 	public final long sh_name;   //offset to name in .shstrtab section
 	public final long sh_type;   //section type
 	public final long sh_flags;  //section attributes
@@ -92,13 +92,13 @@ public class ElfShdr {
 	public final long sh_info;
 	public final long sh_addralign;
 	public final long sh_entsize;
-	
+
 	//Section name. Must be filled up by class user.
 	public String name = null;
-	
+
 	//User data. Can be used by class user to store an object associated to the section.
 	public Object userData;
-	
+
 	public ElfShdr(BinaryReader reader) throws IOException {
 		sh_name = reader.readNextUnsignedInt();
 		sh_type = reader.readNextUnsignedInt();

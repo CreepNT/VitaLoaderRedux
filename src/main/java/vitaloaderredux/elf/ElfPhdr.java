@@ -20,7 +20,7 @@ public class ElfPhdr {
 
 	//Present on .data relocation segment, absent on .text relocation segment.
 	static public final int PF_DATA_RELA = 0x10000;
-	
+
 	/**
 	 * @return DataType for the p_type field
 	 */
@@ -36,7 +36,7 @@ public class ElfPhdr {
 		dt.add("PT_SCE_ARMRELA", PT_SCE_ARMRELA, "PRX1 relocation segment");
 		return dt;
 	}
-	
+
 	/**
 	 * @return DataType for the p_flags field
 	 */
@@ -47,11 +47,11 @@ public class ElfPhdr {
 		dt.add("PF_R", 4);
 		return dt;
 	}
-	
+
 	static public DataType getDataType() {
 		if (PHDR_DATATYPE == null) {
 			DataType uint = UnsignedIntegerDataType.dataType;
-			
+
 			//TODO: make p_flags a EnumDataType as well
 			PHDR_DATATYPE = new StructureDataType(Datatypes.ELF_CATPATH, "Elf32_Phdr", 0);
 			PHDR_DATATYPE.add(getPhdrTypeDataType(), "p_type", "");
@@ -66,7 +66,7 @@ public class ElfPhdr {
 		return PHDR_DATATYPE;
 	}
 	static StructureDataType PHDR_DATATYPE = null;
-	
+
 	public final long p_type;
 	public final long p_offset;
 	public final long p_vaddr;
@@ -75,10 +75,10 @@ public class ElfPhdr {
 	public final long p_memsz;
 	public final long p_flags;
 	public final long p_align;
-	
+
 	//User data. Can be used to store an object associated to the segment.
 	public Object userData;
-	
+
 	public ElfPhdr(BinaryReader reader) throws IOException {
 		p_type = reader.readNextUnsignedInt();
 		p_offset = reader.readNextUnsignedInt();

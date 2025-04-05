@@ -27,7 +27,7 @@ public abstract class ILibstub {
 
 	protected final DataType _getCommonDataType(DataType libAttrType, boolean newname) {
 		final DataType ubyte = Datatypes.u8, ushort = Datatypes.u16;
-				
+
 		StructureDataType common = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryStubTable_ppu_common", 0);
 		common.add(ubyte, "structsize", "Size of this structure");
 		common.add(Datatypes.makeArray(ubyte, 1), "reserved1", "");
@@ -37,14 +37,14 @@ public abstract class ILibstub {
 		common.add(ushort, "nvar", "Number of variables imported from this library");
 		common.add(ushort, "ntlsvar", "Number of TLS variables imported from this library");
 		common.add(Datatypes.makeArray(ubyte, 4), "reserved2", "");
-		
+
 		if (!newname) {
 			return common;
 		}
-		
+
 		return new TypedefDataType(Datatypes.SCE_TYPES_CATPATH, "sceKernelLibraryStubTable_prx2_common", common);
 	}
-	
+
 	protected int version;
 	protected int attribute;
 
@@ -60,7 +60,7 @@ public abstract class ILibstub {
 
 	protected int var_nidtable;
 	protected int var_table;
-	
+
 	protected int tls_nidtable;
 	protected int tls_table;
 
@@ -154,12 +154,12 @@ public abstract class ILibstub {
 		Function importStub = ctx.getImportFunction(modFileName, funcName);
 		func.setThunkedFunction(importStub); // Mark as imported function
 		ctx.addImportExportEntry(funcAddr, libraryName, nid, ArmElfPrxLoaderContext.IETYPE_IMPORT, ArmElfPrxLoaderContext.IEKIND_FUNC);
-		
+
 		// Process function relocations if any exist
 		final int funcRelaVA = ctx.memory.getInt(funcAddr.add(3*4));
 		if (funcRelaVA != 0) {
 			ctx.createData(funcAddr.add(3*4), Datatypes.ptr);
-			
+
 			final Address relaAddr = ctx.getAddressInDefaultAS(funcRelaVA);
 			ctx.listing.setComment(relaAddr, CodeUnit.PLATE_COMMENT, String.format("Relocation table for %s @ 0x%08X", funcName, va));
 			ctx.relocator.processReftable(relaAddr, funcAddr);
@@ -173,11 +173,11 @@ public abstract class ILibstub {
 
 		//Allocate import variable slot and perform relocation towards it
 		Address importVarAddr = ctx.relocator.allocateImportVariableSlot(libraryName, nid, tls);
-		
+
 		//Markup the table and add comment to table and variable
 		ctx.listing.setComment(relaAddr, CodeUnit.PLATE_COMMENT, String.format("Relocation table for %s @ 0x%08X", varName, importVarAddr.getOffset()));
-		
-		String comment = generateImportPlateComment(tls ? "TLS Variable" : "Variable", modFileName, nid);		
+
+		String comment = generateImportPlateComment(tls ? "TLS Variable" : "Variable", modFileName, nid);
 		ctx.listing.setComment(importVarAddr, CodeUnit.PLATE_COMMENT, comment);
 		ctx.relocator.processReftable(relaAddr, importVarAddr);
 	}
@@ -185,7 +185,7 @@ public abstract class ILibstub {
 	private void markupAndProcessTable(int nidTableVA, int entryTableVA, int numElements, String kind,
 			TableProcessingCallback callback) throws Exception {
 		ctx.monitor.checkCancelled();
-		
+
 		Address nidTblAddr = ctx.getAddressInDefaultAS(nidTableVA);
 		Address entTblAddr = ctx.getAddressInDefaultAS(entryTableVA);
 
@@ -215,7 +215,7 @@ public abstract class ILibstub {
 	public void process(ArmElfPrxLoaderContext processingContext, Address libstubAddress) throws Exception {
 		ctx = processingContext;
 		ctx.monitor.checkCancelled();
-		
+
 		// (1) Read the library's name
 		Address libNameAddr = readLibraryName();
 

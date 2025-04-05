@@ -14,11 +14,11 @@ import vitaloaderredux.misc.Utils;
 //Prx1 reference information
 public class Prx1RefInfo implements StructConverter {
 	static public final int SIZE = 8;
-	
+
 	public final int reltype;
 	public final int addend;
 	public final int P;
-	
+
 	public DataType toDataType() {
 		StructureDataType dt = new StructureDataType(Datatypes.SCE_TYPES_CATPATH, "Prx1RefInfo", 0);
 		dt.setPackingEnabled(true);
@@ -28,23 +28,23 @@ public class Prx1RefInfo implements StructConverter {
 		} catch (InvalidDataTypeException e) {
 			throw new RuntimeException(e);
 		}
-		
+
 		dt.add(Datatypes.ptr, "P", "Virtual address where the reference lies");
-		
-		
+
+
 		Utils.assertStructureSize(dt, SIZE);
 		return dt;
 	}
-	
+
 	public Prx1RefInfo(BinaryReader reader) throws IOException {
 		BitfieldReader bfr = new BitfieldReader(reader.readNextInt());
-		
+
 		reltype = bfr.consume(8);
 		addend = bfr.consumeSEXT(24);
 		P = reader.readNextInt();
-		
+
 		bfr.assertFullConsumption("Prx1RefInfo");
 		Utils.assertBRSize("Prx1RefInfo", reader, SIZE);
 	}
-	
+
 }
