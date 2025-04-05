@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import docking.widgets.filechooser.GhidraFileChooser;
+import docking.widgets.filechooser.GhidraFileChooserMode;
 import ghidra.app.services.AbstractAnalyzer;
 import ghidra.app.services.AnalysisPriority;
 import ghidra.app.services.AnalyzerType;
@@ -78,7 +79,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		Environment	//User-provided database, chosen via an environment variable
 	}
 
-	private NIDDatabase database;
+	private NIDDatabase database = new NIDDatabase();
 	private ProgramProcessingHelper helper;
 
 	/* -------- Options --------*/
@@ -143,7 +144,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		return seenBefore;
 	}
 
-	private void analyzeFunction(IEType importOrExport, String libraryName, Address funcAddr, int functionNID) {
+
+	private void analyzeFunction(IEType importOrExport, String libraryName, Address funcAddr, int functionNID, MessageLog log) {
 		final String databaseName = database.getFunctionName(libraryName, functionNID);
 		final boolean functionSeenBefore = checkAndSetKnownAddress(knownFunctionsList, funcAddr);
 		if (clearOldNames && !functionSeenBefore) {
@@ -170,13 +172,13 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
 			} catch (DuplicateNameException | InvalidInputException | CircularDependencyException e) {
-				System.err.println(e);
-				e.printStackTrace();
+				log.appendMsg("Failed to create symbol for function @ " + funcAddr.toString());
+				log.appendException(e);
 			}
 		}
 	}
 
-	private void analyzeVariable(IEType importOrExport, String libraryName, Address varAddr, int variableNID) {
+	private void analyzeVariable(IEType importOrExport, String libraryName, Address varAddr, int variableNID, MessageLog log) {
 		final boolean variableSeenBefore = checkAndSetKnownAddress(knownVariablesList, varAddr);
 		if (clearOldNames && !variableSeenBefore) {
 			// Clear all symbols that are not systematic names if the variable has not been seen before.
@@ -189,7 +191,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			try {
 				helper.flatAPI.createLabel(varAddr, databaseName, /* Global Namespace */null, true, SourceType.ANALYSIS);
 			} catch (Exception e) {
-
+				log.appendMsg("Failed to create symbol for variable @ " + varAddr.toString());
+				log.appendException(e);
 			}
 		}
 	}
@@ -208,7 +211,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			case External: {
 				GhidraFileFilter yamlFilter = new GhidraFileFilter() {
 					public String getDescription() {
-						return "NID database (.yml, .yaml)";
+						return "NID database (.yml, .yaml, directory)";
 					}
 
 					public boolean accept(File pathname, GhidraFileChooserModel model) {
@@ -219,9 +222,10 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 				GhidraFileChooser fileChooser = new GhidraFileChooser(null);
 				fileChooser.setFileFilter(yamlFilter);
-				fileChooser.setTitle("Choose the NID database file to use for this analysis");
-				fileChooser.setApproveButtonText("Use selected file");
-				fileChooser.setApproveButtonToolTipText("Use the selected file as the NID database file for this analysis");
+				fileChooser.setFileSelectionMode(GhidraFileChooserMode.FILES_AND_DIRECTORIES);
+				fileChooser.setTitle("Choose the NID database to use for this analysis");
+				fileChooser.setApproveButtonText("Use selected file/folder");
+				fileChooser.setApproveButtonToolTipText("Use the selected file/folder as NID database for this analysis");
 				databaseFile = fileChooser.getSelectedFile();
 				break;
 			}
@@ -247,7 +251,11 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		}
 
 		try {
-			database = new NIDDatabase(databaseFile);
+			if (databaseFile.isDirectory()) {
+				database.loadFromDirectory(databaseFile, false, log);
+			} else {
+				database.loadFromFile(databaseFile, log);
+			}
 		} catch (IOException e) {
 			log.appendMsg("Could not load NID database:");
 			log.appendException(e);
@@ -264,20 +272,19 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				int NID = iep.getNID();
 				switch (iep.getKind()) {
 				case FUNCTION:
-					analyzeFunction(iep.getType(), libName, iepAddr, NID);
+					analyzeFunction(iep.getType(), libName, iepAddr, NID, log);
 					break;
 				case VARIABLE:
 				case TLS_VARIABLE:
-					analyzeVariable(iep.getType(), libName, iepAddr, NID);
+					analyzeVariable(iep.getType(), libName, iepAddr, NID, log);
 				default:
 					break;
 				}
 
 				iepAddr = iepMap.getNextPropertyAddress(iepAddr);
 			}
-
 		} catch (Exception e) {
-			log.appendMsg("Could not load NID database:");
+			log.appendMsg("Could not apply NIDs:");
 			log.appendException(e);
 			return false;
 		}
