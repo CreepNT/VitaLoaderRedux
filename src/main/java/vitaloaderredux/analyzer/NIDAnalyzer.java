@@ -55,6 +55,12 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	static private final String DELETE_OLD_OPTION_DESCRIPTION =
 			"If enabled, clears all names for imports and exports before analysis";
 
+	static private final boolean DISPLAY_DB_FILENAMES_DEFAULT = false;
+	static private final String DISPLAY_DB_FILENAMES_NAME = "Log name of database files";
+	static private final String DISPLAY_DB_FILENAMES_DESCRIPTION =
+			"If enabled, the name of all NID database files loaded is logged and displayed after analysis. "
+			+ "(This option has an effect only if a NID database folder is selected)";
+
 	//Name of the environement variable that holds path to NID database
 	static private final String ENV_DATABASE_PATH_VARIABLE_NAME = "VLR_DATABASE_PATH";
 
@@ -66,7 +72,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	static { //Set environement source as default if available
 		if (ENVIRONMENT_DATABASE_PATH != null) {
 			File envDB = new File(ENVIRONMENT_DATABASE_PATH);
-			if (envDB.exists() && envDB.isFile()) {
+			if (envDB.exists() && (envDB.isFile() || envDB.isDirectory())) {
 				DATABASE_CHOICE_DEFAULT = DatabaseSource.Environment;
 			}
 		}
@@ -84,7 +90,8 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 	/* -------- Options --------*/
 	private DatabaseSource chosenDB = DATABASE_CHOICE_DEFAULT;
-	private boolean clearOldNames = true;
+	private boolean clearOldNames = DELETE_OLD_OPTION_DEFAULT;
+	private boolean displayAllFilenames = DISPLAY_DB_FILENAMES_DEFAULT;
 	/* ------------------------ */
 
 	public NIDAnalyzer() {
@@ -104,15 +111,18 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	@Override
 	public void registerOptions(Options options, Program program) {
 		options.registerOption(DELETE_OLD_OPTION_NAME,
-				DELETE_OLD_OPTION_DEFAULT,null, DELETE_OLD_OPTION_DESCRIPTION);
+				DELETE_OLD_OPTION_DEFAULT, null, DELETE_OLD_OPTION_DESCRIPTION);
 		options.registerOption(DATABASE_CHOICE_NAME,
 				DATABASE_CHOICE_DEFAULT, null, DATABASE_CHOICE_DESCRIPTION);
+		options.registerOption(DISPLAY_DB_FILENAMES_NAME,
+				DISPLAY_DB_FILENAMES_DEFAULT, null, DISPLAY_DB_FILENAMES_DESCRIPTION);
 	}
 
 	@Override
 	public void optionsChanged(Options options, Program program) {
 		chosenDB = options.getEnum(DATABASE_CHOICE_NAME, DATABASE_CHOICE_DEFAULT);
 		clearOldNames = options.getBoolean(DELETE_OLD_OPTION_NAME, DELETE_OLD_OPTION_DEFAULT);
+		displayAllFilenames = options.getBoolean(DISPLAY_DB_FILENAMES_NAME, DISPLAY_DB_FILENAMES_DEFAULT);
 	}
 
 	private void deleteNonSystematicNamedSymbols(Address address, String libraryName, boolean functionSymbols) {
@@ -252,7 +262,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 
 		try {
 			if (databaseFile.isDirectory()) {
-				database.loadFromDirectory(databaseFile, false, log);
+				database.loadFromDirectory(databaseFile, displayAllFilenames, log);
 			} else {
 				database.loadFromFile(databaseFile, log);
 			}
