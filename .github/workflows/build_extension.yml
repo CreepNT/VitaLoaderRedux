@@ -1,6 +1,6 @@
 name: Build extension
 
-on: [push, pull_request, workflow_dispatch]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
@@ -54,4 +54,6 @@ jobs:
       with:
         name: VitaLoader Redux for Ghidra ${{ matrix.ghidra }}
         path: dist/ghidra_*_VitaLoaderRedux.zip
+        retention-days: 1
+        compression-level: 0
         if-no-files-found: warn
