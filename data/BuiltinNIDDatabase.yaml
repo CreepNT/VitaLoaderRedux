@@ -115,7 +115,7 @@ modules:
             nid: 0x028FFADB
             functions:
                sceKernelDebugModuleStart2: 0x32E3D4B9
-               sceKernelRegisterKprintfHandler: 0xD36F27BA
+               sceKernelRegisterKprintfHandler: 0x0AD558D5
                sceKernelDebugPutchar: 0xD36F27BA
                sceKernelStopped: 0xCB502FD1
                sceKernelAssert: 0x2F9B8AA8
