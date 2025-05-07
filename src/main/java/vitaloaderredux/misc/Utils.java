@@ -110,13 +110,6 @@ public class Utils {
 			result += "SCE_KERNEL_CPU_MASK_" + userSuffix + "2";
 		}
 
-		if ((affinityMask & 0x4) != 0) {
-			if (num_bits != 0)
-				result += " | ";
-			num_bits++;
-			result += "SCE_KERNEL_CPU_MASK_" + userSuffix + "2";
-		}
-
 		if ((affinityMask & 0x2) != 0) {
 			if (num_bits != 0)
 				result += " | ";
