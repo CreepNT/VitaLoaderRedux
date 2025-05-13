@@ -175,12 +175,15 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				func.setParentNamespace(helper.program.getGlobalNamespace());
 
 				func.setName(databaseName, SourceType.ANALYSIS);
-				if (importOrExport == IEType.IMPORT) {
-					//Set name for the thunk too
-					func.getThunkedFunction(true).setName(databaseName, SourceType.ANALYSIS);
-				}
-
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
+				/**
+				 * Do not update the thunk's name (keep systematic name).
+				 *
+				 * Originally, we renamed the import thunk using the database's name, but this is
+				 * actually a bad idea because it prevents renaming symbols on the exporter side.
+				 * The systematic name is guaranteed to never change - using it will allow the link
+				 * to persist as long as as the systematic name label is not removed from export.
+				 */
 			} catch (DuplicateNameException | InvalidInputException | CircularDependencyException e) {
 				log.appendMsg("Failed to create symbol for function @ " + funcAddr.toString());
 				log.appendException(e);
