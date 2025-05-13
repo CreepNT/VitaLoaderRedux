@@ -82,6 +82,9 @@ Can be found in the *Script Manager* under the `Vita` category.
 - `AddHardwareDevices.py`
   - Adds several hardware devices in the memory map
   - Useful for reverse engineering of code running without MMU on (SKBL, NSKBL, CMeP binaries)
+- `FixupVLRImportThunks.java`
+  - Renames all function import thunks to the systematic name
+  - This allows linking across modules with the systematic names which are more stable
 
 #### MeP-c5 support
 - Original idea from [ghidra-mep](https://github.com/xyzz/ghidra-mep) by xyz
@@ -135,6 +138,23 @@ The following features might be implemented in Redux:
   - *if it might be useful for C++ binaries reversing, which I doubt*
 - Full MeP-c5 implementation
 - Venezia (MeP + IVC2) support
+
+## FAQ
+
+#### Q. Attempting to navigate from a module to another using the import thunk results in a `Symbol [<library>_<NID>] does not exist` error
+
+Ghidra was not able to find the label in exporting module.
+
+Make sure that:
+* the label exists in the program (it should be placed on the exported function/variable)
+* the label is in the `Global` namespace
+	* Moving the label in another namespace is a common mistake when creating new Primary labels
+	* Place the cursor on the label in listing and press the `L` key to show (and modify) its namespace
+
+In general, running the NID Analyzer with `Delete old names` options should fix this issue.
+(**Be careful!** All labels applied to imports and exports will be deleted!)
+
+Running the `FixupVLRImportThunks.java` script may also fix the issue if the program was analyzed using an old version of VitaLoaderRedux.
 
 ## Credits
 - **“PlayStation” is a registered trademark or trademark of Sony Interactive Entertainment Inc.**
