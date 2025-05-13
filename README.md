@@ -47,6 +47,8 @@ The default database source is `Environment` if available, and `Builtin` otherwi
 
 To apply NIDs from multiple databases successively, untick the `Clear old names` setting.
 
+**NOTE:** Names from the database are automatically demangled using the GNU Demangler.
+
 #### Variable import relocation
 Variable imports are now supported and handled properly! This also applies to function-as-variable imports.
 A special memory block is created to "store" all imported variables, and relocations are applied so that all code inside the module that accesses them will access them inside the special memory block.
@@ -117,8 +119,12 @@ Before submitting any bug report:
   - Regular ELF files are **not** supported by this loader!
 - If you are not able to load a file (`ARM ELF-PRX for PlayStation®Vita` is not displayed in the `Executable Type` list): ***please verify that your executable is not malformed***.
 
-### Known bugs
-None.
+### Known bugs / issues / limiations
+
+* Running the `Demangler GNU` analyzer breaks import thunks
+  * Workaround: do not use the `Demangler DNU` analyzer.
+  * The `NID Analyzer` will automatically demangle imports and exports
+  * Other symbols can be demangled using scripting
 
 ## Future plans
 The following features might be implemented in Redux:
