@@ -4,23 +4,31 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import ghidra.app.services.AbstractAnalyzer;
 import ghidra.app.services.AnalysisPriority;
 import ghidra.app.services.AnalyzerType;
+import ghidra.app.util.CommentTypes;
+import ghidra.app.util.demangler.Demangled;
+import ghidra.app.util.demangler.DemangledException;
+import ghidra.app.util.demangler.DemangledObject;
+import ghidra.app.util.demangler.gnu.GnuDemangler;
 import ghidra.app.util.importer.MessageLog;
 import ghidra.framework.Application;
 import ghidra.framework.options.Options;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.listing.CircularDependencyException;
+import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.model.util.ObjectPropertyMap;
+import ghidra.program.util.CommentType;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.exception.InvalidInputException;
@@ -86,6 +94,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 	}
 
 	private NIDDatabase database = new NIDDatabase();
+	private GnuDemangler demangler = new GnuDemangler();
 	private ProgramProcessingHelper helper;
 
 	/* -------- Options --------*/
@@ -154,15 +163,43 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		return seenBefore;
 	}
 
+	private Map.Entry<String, String> getDemangled(String possiblyMangledName)
+	{
+		try {
+			DemangledObject obj = demangler.demangle(possiblyMangledName);
+			if (obj == null) {
+				return Map.entry(possiblyMangledName, null);
+			}
+
+			Demangled namespace = obj.getNamespace();
+			if (namespace == null) {
+				return Map.entry(obj.getName(), obj.getSignature());
+			} else {
+				return Map.entry(namespace.toString() + "::" + obj.getName(), obj.getSignature());
+			}
+		} catch (DemangledException e) {
+			return Map.entry(possiblyMangledName, null);
+		}
+	}
+
+	private Map.Entry<String, String> getFunctionInfo(String libraryName, int variableNID) {
+		String databaseName = database.getFunctionName(libraryName, variableNID);
+		return (databaseName == null) ? null : getDemangled(databaseName);
+	}
+
+	private Map.Entry<String, String> getVariableInfo(String libraryName, int variableNID) {
+		String databaseName = database.getVariableName(libraryName, variableNID);
+		return (databaseName == null) ? null : getDemangled(databaseName);
+	}
 
 	private void analyzeFunction(IEType importOrExport, String libraryName, Address funcAddr, int functionNID, MessageLog log) {
-		final String databaseName = database.getFunctionName(libraryName, functionNID);
+		final Map.Entry<String, String> databaseInfo = getFunctionInfo(libraryName, functionNID);
 		final boolean functionSeenBefore = checkAndSetKnownAddress(knownFunctionsList, funcAddr);
 		if (clearOldNames && !functionSeenBefore) {
 			deleteNonSystematicNamedSymbols(funcAddr, libraryName, true);
 		}
 
-		if (databaseName != null) {
+		if (databaseInfo != null) {
 			// Replace the current name of the function with the DB's name
 			// and add back the overwritten name as a symbol.
 			Function func = helper.funcMgr.getFunctionAt(funcAddr);
@@ -174,8 +211,23 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				//Put the function in global namespace to prevent this from happening.
 				func.setParentNamespace(helper.program.getGlobalNamespace());
 
-				func.setName(databaseName, SourceType.ANALYSIS);
+				func.setName(databaseInfo.getKey(), SourceType.ANALYSIS);
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
+				
+				//If function signature was obtained, append it to function's plate comment.
+				String funcSignature = databaseInfo.getValue();
+				if (funcSignature != null) {
+					String newComment = func.getComment();
+					if (newComment == null) {
+						newComment = "";
+					}
+					if (newComment.length() > 0) {
+						newComment += "\n\n";
+					}
+					newComment += funcSignature;
+					func.setComment(newComment);
+				}
+				
 				/**
 				 * Do not update the thunk's name (keep systematic name).
 				 *
@@ -198,11 +250,26 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			deleteNonSystematicNamedSymbols(varAddr, libraryName, false);
 		}
 
-		final String databaseName = database.getVariableName(libraryName, variableNID);
-		if (databaseName != null) {
+		final Map.Entry<String, String> databaseInfo = getVariableInfo(libraryName, variableNID);
+		if (databaseInfo != null) {
 			// Create a new symbol with the DB's name and set it as primary
 			try {
-				helper.flatAPI.createLabel(varAddr, databaseName, /* Global Namespace */null, true, SourceType.ANALYSIS);
+				helper.flatAPI.createLabel(varAddr, databaseInfo.getKey(), /* Global Namespace */null, true, SourceType.ANALYSIS);
+
+				// Add variable's signature if obtained
+				String variableSignature = databaseInfo.getValue();
+				if (variableSignature != null) {
+					String newComment = helper.listing.getComment(CodeUnit.PLATE_COMMENT, varAddr);
+					if (newComment == null) {
+						newComment = "";
+					}
+					if (newComment.length() > 0) {
+						newComment += "\n\n";
+					}
+					newComment += variableSignature;
+					
+					helper.listing.setComment(varAddr, CodeUnit.PLATE_COMMENT, variableSignature);
+				}
 			} catch (Exception e) {
 				log.appendMsg("Failed to create symbol for variable @ " + varAddr.toString());
 				log.appendException(e);
