@@ -110,7 +110,9 @@ Close Ghidra and follow the [install instructions](#Installation) again.
 [Install Gradle](https://gradle.org/install/) then run `gradle` in a command prompt.
 Make sure to pass `-PGHIDRA_INSTALL_DIR=<path to Ghidra install>` if the environment variable `GHIDRA_INSTALL_DIR` is not set.
 
-**Building the extension for a version of Ghidra earlier than 10.3 is not supported.**
+**Building the extension for a version of Ghidra earlier than 10.3 has never been supported.**
+
+Since extension release 1.09, building the extension for a version of Ghidra earlier than 11.4 is not supported.
 
 ## Bug reports
 Please report any error encountered with Redux in the [Issues Tracker](https://github.com/CreepNT/VitaLoaderRedux/issues).
