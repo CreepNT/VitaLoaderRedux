@@ -10,6 +10,7 @@ import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.TerminatedStringDataType;
 import ghidra.program.model.data.TypedefDataType;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.symbol.Namespace;
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
@@ -161,7 +162,7 @@ public abstract class ILibstub {
 			ctx.createData(funcAddr.add(3*4), Datatypes.ptr);
 
 			final Address relaAddr = ctx.getAddressInDefaultAS(funcRelaVA);
-			ctx.listing.setComment(relaAddr, CodeUnit.PLATE_COMMENT, String.format("Relocation table for %s @ 0x%08X", funcName, va));
+			ctx.listing.setComment(relaAddr, CommentType.PLATE, String.format("Relocation table for %s @ 0x%08X", funcName, va));
 			ctx.relocator.processReftable(relaAddr, funcAddr);
 		}
 	}
@@ -175,10 +176,10 @@ public abstract class ILibstub {
 		Address importVarAddr = ctx.relocator.allocateImportVariableSlot(libraryName, nid, tls);
 
 		//Markup the table and add comment to table and variable
-		ctx.listing.setComment(relaAddr, CodeUnit.PLATE_COMMENT, String.format("Relocation table for %s @ 0x%08X", varName, importVarAddr.getOffset()));
+		ctx.listing.setComment(relaAddr, CommentType.PLATE, String.format("Relocation table for %s @ 0x%08X", varName, importVarAddr.getOffset()));
 
 		String comment = generateImportPlateComment(tls ? "TLS Variable" : "Variable", modFileName, nid);
-		ctx.listing.setComment(importVarAddr, CodeUnit.PLATE_COMMENT, comment);
+		ctx.listing.setComment(importVarAddr, CommentType.PLATE, comment);
 		ctx.relocator.processReftable(relaAddr, importVarAddr);
 	}
 

@@ -30,6 +30,7 @@ import ghidra.program.model.data.ByteDataType;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Data;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.mem.MemoryBlock;
@@ -558,8 +559,8 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		if (modInfo.tls_top != 0 && modInfo.tls_memsz != 0) {
 			Address tls_start = modInfoSegmentBase.add(modInfo.tls_top);
 			Address tls_end = tls_start.add(modInfo.tls_memsz - 1);
-			ctx.listing.setComment(tls_start, CodeUnit.PRE_COMMENT, "--- TLS data start ---");
-			ctx.listing.setComment(tls_end, CodeUnit.POST_COMMENT, "--- TLS data end ---");
+			ctx.listing.setComment(tls_start, CommentType.PRE, "--- TLS data start ---");
+			ctx.listing.setComment(tls_end, CommentType.POST, "--- TLS data end ---");
 			try {
 				ctx.createLabeledDataInNamespace(tls_start, ctx.moduleNamespace, "tls", Datatypes.makeArray(ByteDataType.dataType, (int)modInfo.tls_memsz));
 			} catch (CodeUnitInsertionException e) {

@@ -8,6 +8,7 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.Pointer32DataType;
 import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Data;
 import vitaloaderredux.elf.MalformedElfException;
 import vitaloaderredux.loader.ArmElfPrxLoaderContext;
@@ -155,15 +156,15 @@ public class SceProcessParam {
 		ctx.markupS32(pSceUserMainThreadCpuAffinityMask, "sceUserMainThreadCpuAffinityMask");
 
 		if (priority != null) {
-			priority.setComment(CodeUnit.PLATE_COMMENT, Utils.prettifyPriority(priority.getInt(0)));
+			priority.setComment(CommentType.PLATE, Utils.prettifyPriority(priority.getInt(0)));
 		}
 
 		if (stackSize != null) {
-			stackSize.setComment(CodeUnit.PLATE_COMMENT, Utils.prettifySize(stackSize.getInt(0)));
+			stackSize.setComment(CommentType.PLATE, Utils.prettifySize(stackSize.getInt(0)));
 		}
 
 		if (inhibit != null) {
-			inhibit.setComment(CodeUnit.PLATE_COMMENT, Utils.prettifyInhibitBitflag(inhibit.getInt(0)));
+			inhibit.setComment(CommentType.PLATE, Utils.prettifyInhibitBitflag(inhibit.getInt(0)));
 		}
 
 		processLibcParam(ctx);

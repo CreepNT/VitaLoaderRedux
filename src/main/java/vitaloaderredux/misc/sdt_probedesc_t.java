@@ -13,6 +13,7 @@ import ghidra.program.model.data.StructureDataType;
 import ghidra.program.model.data.VoidDataType;
 import ghidra.program.model.listing.BookmarkType;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Function.FunctionUpdateType;
 import ghidra.program.model.listing.ParameterImpl;
@@ -171,7 +172,7 @@ public class sdt_probedesc_t {
 
 			String comment = makePlateComment();
 			comment += "Probe instrumentation point";
-			ctx.listing.setComment(instrumentationPointAddr, CodeUnit.PLATE_COMMENT, comment);
+			ctx.listing.setComment(instrumentationPointAddr, CommentType.PLATE, comment);
 		}
 
 		// Markup the helper functions if needed (check is in function)
