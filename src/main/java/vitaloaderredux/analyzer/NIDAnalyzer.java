@@ -11,7 +11,6 @@ import docking.widgets.filechooser.GhidraFileChooserMode;
 import ghidra.app.services.AbstractAnalyzer;
 import ghidra.app.services.AnalysisPriority;
 import ghidra.app.services.AnalyzerType;
-import ghidra.app.util.CommentTypes;
 import ghidra.app.util.demangler.Demangled;
 import ghidra.app.util.demangler.DemangledException;
 import ghidra.app.util.demangler.DemangledObject;
@@ -23,12 +22,12 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.listing.CircularDependencyException;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.model.util.ObjectPropertyMap;
-import ghidra.program.util.CommentType;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.exception.InvalidInputException;
@@ -259,7 +258,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				// Add variable's signature if obtained
 				String variableSignature = databaseInfo.getValue();
 				if (variableSignature != null) {
-					String newComment = helper.listing.getComment(CodeUnit.PLATE_COMMENT, varAddr);
+					String newComment = helper.listing.getComment(CommentType.PLATE, varAddr);
 					if (newComment == null) {
 						newComment = "";
 					}
@@ -268,7 +267,7 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 					}
 					newComment += variableSignature;
 					
-					helper.listing.setComment(varAddr, CodeUnit.PLATE_COMMENT, variableSignature);
+					helper.listing.setComment(varAddr, CommentType.PLATE, newComment);
 				}
 			} catch (Exception e) {
 				log.appendMsg("Failed to create symbol for variable @ " + varAddr.toString());

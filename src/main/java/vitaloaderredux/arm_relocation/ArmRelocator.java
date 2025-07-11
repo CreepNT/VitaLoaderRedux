@@ -4,6 +4,7 @@ import ghidra.app.util.bin.StructConverter;
 import ghidra.app.util.opinion.LoadException;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.mem.MemoryBlock;
 import vitaloaderredux.elf.MalformedElfException;
@@ -271,7 +272,7 @@ public class ArmRelocator {
 
 	private void markupInfo(StructConverter info, Address addr, int P) throws Exception {
 		ctx.createData(addr, info.toDataType());
-		ctx.listing.setComment(addr, CodeUnit.PRE_COMMENT, String.format("Relocation target: 0x%08X", P));
+		ctx.listing.setComment(addr, CommentType.PRE, String.format("Relocation target: 0x%08X", P));
 	}
 
 	private void processPrx1Reftable(Address infoAddr, int destVA) throws Exception {
