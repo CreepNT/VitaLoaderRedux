@@ -161,38 +161,48 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 		}
 		return seenBefore;
 	}
+	
+	private class SymNameSigPair {
+		String name;
+		String signature;
 
-	private Map.Entry<String, String> getDemangled(String possiblyMangledName)
+		public SymNameSigPair(String name, String signature) {
+			this.name = name;
+			this.signature = signature;
+		}
+	}
+
+	private SymNameSigPair getDemangled(String possiblyMangledName)
 	{
 		try {
 			DemangledObject obj = demangler.demangle(possiblyMangledName);
 			if (obj == null) {
-				return Map.entry(possiblyMangledName, null);
+				return new SymNameSigPair(possiblyMangledName, null);
 			}
 
 			Demangled namespace = obj.getNamespace();
 			if (namespace == null) {
-				return Map.entry(obj.getName(), obj.getSignature());
+				return  new SymNameSigPair(obj.getName(), obj.getSignature());
 			} else {
-				return Map.entry(namespace.toString() + "::" + obj.getName(), obj.getSignature());
+				return new SymNameSigPair(namespace.toString() + "::" + obj.getName(), obj.getSignature());
 			}
 		} catch (DemangledException e) {
-			return Map.entry(possiblyMangledName, null);
+			return new SymNameSigPair(possiblyMangledName, null);
 		}
 	}
 
-	private Map.Entry<String, String> getFunctionInfo(String libraryName, int variableNID) {
+	private SymNameSigPair getFunctionInfo(String libraryName, int variableNID) {
 		String databaseName = database.getFunctionName(libraryName, variableNID);
 		return (databaseName == null) ? null : getDemangled(databaseName);
 	}
 
-	private Map.Entry<String, String> getVariableInfo(String libraryName, int variableNID) {
+	private SymNameSigPair getVariableInfo(String libraryName, int variableNID) {
 		String databaseName = database.getVariableName(libraryName, variableNID);
 		return (databaseName == null) ? null : getDemangled(databaseName);
 	}
 
 	private void analyzeFunction(IEType importOrExport, String libraryName, Address funcAddr, int functionNID, MessageLog log) {
-		final Map.Entry<String, String> databaseInfo = getFunctionInfo(libraryName, functionNID);
+		final SymNameSigPair databaseInfo = getFunctionInfo(libraryName, functionNID);
 		final boolean functionSeenBefore = checkAndSetKnownAddress(knownFunctionsList, funcAddr);
 		if (clearOldNames && !functionSeenBefore) {
 			deleteNonSystematicNamedSymbols(funcAddr, libraryName, true);
@@ -210,11 +220,11 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 				//Put the function in global namespace to prevent this from happening.
 				func.setParentNamespace(helper.program.getGlobalNamespace());
 
-				func.setName(databaseInfo.getKey(), SourceType.ANALYSIS);
+				func.setName(databaseInfo.name, SourceType.ANALYSIS);
 				helper.symTbl.createLabel(funcAddr, oldName, SourceType.ANALYSIS);
 				
 				//If function signature was obtained, append it to function's plate comment.
-				String funcSignature = databaseInfo.getValue();
+				String funcSignature = databaseInfo.signature;
 				if (funcSignature != null) {
 					String newComment = func.getComment();
 					if (newComment == null) {
@@ -249,14 +259,14 @@ public class NIDAnalyzer extends AbstractAnalyzer {
 			deleteNonSystematicNamedSymbols(varAddr, libraryName, false);
 		}
 
-		final Map.Entry<String, String> databaseInfo = getVariableInfo(libraryName, variableNID);
+		final SymNameSigPair databaseInfo = getVariableInfo(libraryName, variableNID);
 		if (databaseInfo != null) {
 			// Create a new symbol with the DB's name and set it as primary
 			try {
-				helper.flatAPI.createLabel(varAddr, databaseInfo.getKey(), /* Global Namespace */null, true, SourceType.ANALYSIS);
+				helper.flatAPI.createLabel(varAddr, databaseInfo.name, /* Global Namespace */null, true, SourceType.ANALYSIS);
 
 				// Add variable's signature if obtained
-				String variableSignature = databaseInfo.getValue();
+				String variableSignature = databaseInfo.signature;
 				if (variableSignature != null) {
 					String newComment = helper.listing.getComment(CommentType.PLATE, varAddr);
 					if (newComment == null) {
