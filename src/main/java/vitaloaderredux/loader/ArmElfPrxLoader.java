@@ -13,7 +13,6 @@ import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.ByteProvider;
 import ghidra.app.util.bin.format.elf.ElfConstants;
 import ghidra.app.util.bin.format.elf.ElfProgramHeaderConstants;
-import ghidra.app.util.importer.MessageLog;
 import ghidra.app.util.opinion.AbstractLibrarySupportLoader;
 import ghidra.app.util.opinion.LoadException;
 import ghidra.app.util.opinion.LoadSpec;
@@ -29,7 +28,6 @@ import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.data.ByteDataType;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
-import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Data;
 import ghidra.program.model.listing.Program;
@@ -133,8 +131,8 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 
 	@Override
 	public List<Option> getDefaultOptions(ByteProvider provider, LoadSpec loadSpec,
-			DomainObject domainObject, boolean isLoadIntoProgram) {
-		List<Option> list = super.getDefaultOptions(provider, loadSpec, domainObject, isLoadIntoProgram);
+			DomainObject domainObject, boolean isLoadIntoProgram, boolean mirrorFsLayout) {
+		List<Option> list = super.getDefaultOptions(provider, loadSpec, domainObject, isLoadIntoProgram, mirrorFsLayout);
 
 		//Place at end of address space with 4KiB per variable, up to 128 variables
 		//Don't make block too big to avoid hindering navigation using the scroll bar!
@@ -190,10 +188,12 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 	FileBytes fileBytes = null;
 
 	@Override
-	protected void load(ByteProvider provider, LoadSpec loadSpec, List<Option> options,
-			Program program, TaskMonitor taskMon, MessageLog log)
+	protected void load(Program program, ImporterSettings settings)
 			throws CancelledException, IOException {
 
+		ByteProvider provider = settings.provider();
+		TaskMonitor taskMon = settings.monitor();
+		
 		//Initialize loader context
 		ElfEhdr ehdr = new ElfEhdr(provider);
 
@@ -215,7 +215,7 @@ public class ArmElfPrxLoader extends AbstractLibrarySupportLoader {
 		}
 
 		try {
-			ctx = new ArmElfPrxLoaderContext(program, ehdr, taskMon, log, provider.length(), options);
+			ctx = new ArmElfPrxLoaderContext(program, ehdr, taskMon, settings.log(), provider.length(), settings.options());
 		} catch (Exception e) {
 			throw new LoadException(e);
 		}

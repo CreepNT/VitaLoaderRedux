@@ -3,7 +3,7 @@
 A Ghidra extension for PlayStation®Vita reverse engineers!
 This extension contains a loader for ELF-PRX modules, MeP-c5 processor and helper scripts.
 
-## Features 
+## Features
 Redux can be used in place of the ELF loader provided by Ghidra to load executables in ELF-PRX format targeting the PlayStation®Vita platform. **This loader does NOT support standard ELF executables - only use it for ELFs in PRX format.**
 
 - Loads ELF files with SCE types (`ET_SCE_EXEC`, `ET_SCE_RELEXEC`, `ET_SCE_PSP2RELEXEC`) and standard types (`ET_REL`, `ET_EXEC`, `ET_CORE` ***in PRX format***)
@@ -112,7 +112,7 @@ Make sure to pass `-PGHIDRA_INSTALL_DIR=<path to Ghidra install>` if the environ
 
 **Building the extension for a version of Ghidra earlier than 10.3 has never been supported.**
 
-Since extension release 1.09, building the extension for a version of Ghidra earlier than 11.4 is not supported.
+Since extension release 1.09, building the extension for a version of Ghidra earlier than 12.0 is not supported.
 
 ## Bug reports
 Please report any error encountered with Redux in the [Issues Tracker](https://github.com/CreepNT/VitaLoaderRedux/issues).
