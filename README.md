@@ -114,6 +114,8 @@ Make sure to pass `-PGHIDRA_INSTALL_DIR=<path to Ghidra install>` if the environ
 
 Since extension release 1.09, building the extension for a version of Ghidra earlier than 12.0 is not supported.
 
+The build workflow generates a separate extension ZIP for Ghidra 12.0, 12.1, 12.1.2, 12.1.3, and 12.2.
+
 ## Bug reports
 Please report any error encountered with Redux in the [Issues Tracker](https://github.com/CreepNT/VitaLoaderRedux/issues).
 

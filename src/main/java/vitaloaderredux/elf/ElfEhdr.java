@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.ByteProvider;
 import ghidra.app.util.bin.StructConverter;
-import ghidra.app.util.bin.format.Writeable;
 import ghidra.app.util.bin.format.elf.ElfConstants;
 import ghidra.app.util.bin.format.elf.ElfProgramHeaderConstants;
 import ghidra.program.model.data.ArrayDataType;
@@ -22,7 +21,7 @@ import ghidra.util.LittleEndianDataConverter;
 import ghidra.util.exception.DuplicateNameException;
 import vitaloaderredux.misc.Datatypes;
 
-public class ElfEhdr implements StructConverter, Writeable {
+public class ElfEhdr implements StructConverter {
 
 	//For e_type
 	static private final int ETSCEEXEC = 0xFE00,
@@ -416,7 +415,6 @@ public class ElfEhdr implements StructConverter, Writeable {
 		return getDataType();
 	}
 
-	@Override
 	public void write(RandomAccessFile raf, DataConverter dc) throws IOException {
 		raf.write((byte)0x7F);
 		raf.write((byte)'E');

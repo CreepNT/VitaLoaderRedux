@@ -5,6 +5,7 @@ import java.math.BigInteger;
 
 import docking.widgets.textfield.IntegerTextField;
 import ghidra.app.util.Option;
+import ghidra.app.util.AddressFactoryService;
 
 /**
  *
@@ -27,7 +28,12 @@ public class HexOption extends Option {
 			super(name, Long.class, value, arg, group);
 		}
 
-		@Override
+		// Ghidra 12.2 passes the address factory service to custom editors.
+		public Component getCustomEditorComponent(AddressFactoryService addressFactoryService) {
+			return getCustomEditorComponent();
+		}
+
+		// Ghidra 12.0 and 12.1 use the no-argument editor method.
 		public Component getCustomEditorComponent() {
 			IntegerTextField field = new IntegerTextField();
 			field.setHexMode();
